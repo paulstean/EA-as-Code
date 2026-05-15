@@ -130,6 +130,14 @@ header h1{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px
 #detailPanel .dp-rel .rel-target:hover{text-decoration:underline}
 #detailPanel .dp-rel .rel-desc{color:var(--text-secondary);font-size:12px}
 #detailPanel .dp-section.empty{color:var(--text-muted);font-size:12px;font-style:italic}
+#relPopover{display:none;position:fixed;z-index:2000;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:6px 0;min-width:200px;max-width:320px;box-shadow:0 6px 24px rgba(0,0,0,0.5);font-size:12px}
+#relPopover .pop-header{padding:6px 12px 8px;color:var(--text-muted);font-size:11px;border-bottom:1px solid var(--border)}
+#relPopover .pop-empty{padding:12px;color:var(--text-muted);text-align:center;font-style:italic}
+#relPopover .pop-item{padding:6px 12px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:background 0.12s}
+#relPopover .pop-item:hover{background:var(--hover-highlight)}
+#relPopover .pop-item .pop-swatch{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+#relPopover .pop-item .pop-name{color:var(--text-primary);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#relPopover .pop-item .pop-desc{color:var(--text-secondary);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 </style>
 </head>
 <body>
@@ -164,6 +172,7 @@ header h1{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px
     <div id="graph"></div>
     <div id="emptyState">Open a repository and select catalogs to begin</div>
   </div>
+  <div id="relPopover"></div>
 </div>
 <aside id="detailPanel">
   <div class="dp-header">
@@ -258,6 +267,7 @@ const state = {
   isLoading: false,
   searchTerm: '',
   loadedCatalogNames: [],
+  flowPositions: {},
 };
 
 // ─── DOM refs ─────────────────────────────────────────────────
@@ -374,6 +384,7 @@ async function loadRepository() {
         if (entry.id) state.entryMap[entry.id] = { entry, catalog: cat };
       }
     }
+    state.flowPositions = computeFlowPositions();
 
     // Init graph
     initGraph();
@@ -449,14 +460,14 @@ function initGraph() {
       enabled: true,
       solver: 'barnesHut',
       barnesHut: {
-        gravitationalConstant: -12000,
-        centralGravity: 0.3,
-        springLength: 250,
+        gravitationalConstant: -5000,
+        centralGravity: 0.0,
+        springLength: 350,
         springConstant: 0.005,
         damping: 0.09,
       },
       stabilization: { iterations: 1000, updateInterval: 25 },
-      maxVelocity: 10,
+      maxVelocity: 15,
       minVelocity: 0.75,
     },
     interaction: {
@@ -501,10 +512,15 @@ function initGraph() {
       const hcolor = CATALOG_COLORS[hcat] || '#888';
       state.nodes.update({ id: params.node, color: { background: hexAlpha(hcolor, 0.4), border: hcolor } });
     }
+    const evt = params.event;
+    const mx = evt ? evt.clientX : (params.pointer.DOM.x + graphEl.getBoundingClientRect().left);
+    const my = evt ? evt.clientY : (params.pointer.DOM.y + graphEl.getBoundingClientRect().top);
+    showRelationPopover(params.node, mx, my);
   });
 
   state.network.on('blurNode', function() {
     updateNodeColors();
+    hideRelationPopoverDelayed();
   });
 
   state.network.on('doubleClick', function(params) {
@@ -521,11 +537,14 @@ function addEntryToGraph(entryId) {
   const data = state.entryMap[entryId];
   if (!data) return;
   const { entry, catalog } = data;
+  const pos = state.flowPositions[entryId];
   state.nodes.add({
     id: entry.id,
     label: entry.name,
     group: catalog,
     title: entry.name + ' \u2014 ' + toTitle(catalog),
+    x: pos?.x,
+    y: pos?.y,
   });
   state.visibleEntries.add(entryId);
   resolveEdges();
@@ -543,15 +562,17 @@ function removeEntryFromGraph(entryId) {
 
 function addCatalogAllToGraph(catalog) {
   const entries = state.entries[catalog] || [];
-  const ids = entries.map(e => e.id).filter(id => !state.nodes.get(id));
   const batch = [];
   for (const entry of entries) {
     if (state.nodes.get(entry.id)) continue;
+    const pos = state.flowPositions[entry.id];
     batch.push({
       id: entry.id,
       label: entry.name,
       group: catalog,
       title: entry.name + ' \u2014 ' + toTitle(catalog),
+      x: pos?.x,
+      y: pos?.y,
     });
     state.visibleEntries.add(entry.id);
   }
@@ -570,6 +591,129 @@ function removeCatalogAllFromGraph(catalog) {
   for (const id of ids) state.visibleEntries.delete(id);
   if (state.visibleEntries.size === 0) emptyState.style.display = 'block';
   if (state.selectedNodeId && idSet.has(state.selectedNodeId)) closeDetail();
+}
+
+// ─── Hover popover ────────────────────────────────────────────
+let popoverHideTimer = null;
+const relPopover = document.getElementById('relPopover');
+
+relPopover.addEventListener('mouseenter', function() {
+  clearTimeout(popoverHideTimer);
+});
+
+relPopover.addEventListener('mouseleave', function() {
+  hideRelationPopoverDelayed();
+});
+
+function getRelatedNodes(nodeId) {
+  const data = state.entryMap[nodeId];
+  if (!data) return [];
+  const { entry, catalog } = data;
+
+  const catalogToType = {};
+  const typeToCatalog = {};
+  for (const et of (state.meta?.entityTypes || [])) {
+    catalogToType[et.catalog] = et.name;
+    typeToCatalog[et.name] = et.catalog;
+  }
+
+  const nodeType = catalogToType[catalog];
+  if (!nodeType) return [];
+
+  const results = [];
+
+  for (const rel of (state.meta?.relationships || [])) {
+    // This node is the SOURCE — look at its viaField
+    if (rel.source === nodeType) {
+      const targetCatalog = typeToCatalog[rel.target];
+      if (!targetCatalog) continue;
+      const refVal = entry[rel.viaField];
+      if (refVal == null) continue;
+      const targets = Array.isArray(refVal) ? refVal : [refVal];
+      for (const tid of targets) {
+        if (tid == null || tid === '') continue;
+        if (state.visibleEntries.has(tid)) continue;
+        const te = state.entryMap[tid];
+        if (!te) continue;
+        results.push({ entryId: tid, label: te.entry.name, catalog: te.catalog, description: rel.description, dir: 'out' });
+      }
+    }
+
+    // This node is the TARGET — scan source entries for references
+    if (rel.target === nodeType) {
+      const sourceCatalog = typeToCatalog[rel.source];
+      if (!sourceCatalog) continue;
+      const sourceEntries = state.entries[sourceCatalog] || [];
+      for (const src of sourceEntries) {
+        if (src.id === nodeId) continue;
+        const refVal = src[rel.viaField];
+        if (refVal == null) continue;
+        const targets = Array.isArray(refVal) ? refVal : [refVal];
+        if (!targets.includes(nodeId)) continue;
+        if (state.visibleEntries.has(src.id)) continue;
+        results.push({ entryId: src.id, label: src.name, catalog: sourceCatalog, description: rel.description, dir: 'in' });
+      }
+    }
+  }
+
+  // Deduplicate by entryId
+  const seen = new Set();
+  return results.filter(r => { if (seen.has(r.entryId)) return false; seen.add(r.entryId); return true; });
+}
+
+function showRelationPopover(nodeId, x, y) {
+  clearTimeout(popoverHideTimer);
+  const items = getRelatedNodes(nodeId);
+  let html;
+  if (items.length === 0) {
+    html = '<div class="pop-empty">No hidden related nodes</div>';
+  } else {
+    html = '<div class="pop-header">Hidden related nodes</div>';
+    for (const item of items) {
+      const color = CATALOG_COLORS[item.catalog] || '#888';
+      const arrow = item.dir === 'out' ? '&#8594;' : '&#8592;';
+      html += '<div class="pop-item" data-entry="' + item.entryId + '">';
+      html += '<span class="pop-swatch" style="background:' + color + '"></span>';
+      html += '<span class="pop-name">' + item.label + '</span>';
+      html += '<span class="pop-desc">' + arrow + ' ' + item.description + '</span>';
+      html += '</div>';
+    }
+  }
+  relPopover.innerHTML = html;
+  relPopover.style.display = 'block';
+
+  // Position: prefer below-right, flip if off-screen
+  const pw = relPopover.offsetWidth;
+  const ph = relPopover.offsetHeight;
+  let px = x + 12;
+  let py = y + 12;
+  if (px + pw > window.innerWidth - 8) px = x - pw - 12;
+  if (py + ph > window.innerHeight - 8) py = Math.max(8, y - ph - 12);
+  if (px < 8) px = 8;
+  if (py < 8) py = 8;
+  relPopover.style.left = px + 'px';
+  relPopover.style.top = py + 'px';
+
+  // Wire clicks on items
+  relPopover.querySelectorAll('.pop-item').forEach(el => {
+    el.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const eid = this.dataset.entry;
+      if (!eid) return;
+      // Check the sidebar checkbox
+      const cb = document.querySelector('input[data-id="' + eid + '"]');
+      if (cb && !cb.checked) cb.click();
+      else if (!cb) addEntryToGraph(eid);
+      relPopover.style.display = 'none';
+    });
+  });
+}
+
+function hideRelationPopoverDelayed() {
+  clearTimeout(popoverHideTimer);
+  popoverHideTimer = setTimeout(function() {
+    relPopover.style.display = 'none';
+  }, 400);
 }
 
 function resolveEdges() {
@@ -611,6 +755,36 @@ function resolveEdges() {
     }
   }
   if (toAdd.length) state.edges.add(toAdd);
+}
+
+// Compute initial positions so sources sit left, targets right, flows center
+function computeFlowPositions() {
+  const positions = {};
+  let flowCatalog = null;
+  for (const et of (state.meta?.entityTypes || [])) {
+    if (et.name === 'InformationFlow') { flowCatalog = et.catalog; break; }
+  }
+  if (!flowCatalog) return positions;
+  const flows = state.entries[flowCatalog] || [];
+  const netFlow = {};
+  for (const flow of flows) {
+    const src = flow.sourceApplicationComponentId;
+    const tgt = flow.targetApplicationComponentId;
+    if (src) netFlow[src] = (netFlow[src] || 0) + 1;
+    if (tgt) netFlow[tgt] = (netFlow[tgt] || 0) - 1;
+  }
+  for (const [id, bal] of Object.entries(netFlow)) {
+    if (bal > 0) positions[id] = { x: -350 + (Math.random() - 0.5) * 100, y: (Math.random() - 0.5) * 300 };
+    else if (bal < 0) positions[id] = { x: 350 + (Math.random() - 0.5) * 100, y: (Math.random() - 0.5) * 300 };
+    else positions[id] = { x: (Math.random() - 0.5) * 120, y: (Math.random() - 0.5) * 300 };
+  }
+  let i = 0;
+  const n = flows.length;
+  for (const flow of flows) {
+    positions[flow.id] = { x: (Math.random() - 0.5) * 60, y: (i - (n - 1) / 2) * 50 + (Math.random() - 0.5) * 20 };
+    i++;
+  }
+  return positions;
 }
 
 function updateNodeColors() {
