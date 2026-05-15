@@ -10,22 +10,34 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 CATALOGS_DIR = os.path.join(ROOT, "catalogs")
 METAMODEL_PATH = os.path.join(ROOT, "metamodel.json")
 
-errors = []
+PASS = "PASS"
+FAIL = "FAIL"
 
-def e(msg):
-    errors.append(msg)
-    print(f"  ERROR: {msg}")
+results = {}  # section_name -> (status, count)
+
+
+def section(name):
+    print(f"\n── {name} ─────────────────────────────────────────────")
+
+def end_section(name, errors):
+    if errors:
+        results[name] = (FAIL, len(errors))
+    else:
+        results[name] = (PASS, 0)
+
 
 def load_json(path, label):
     try:
         with open(path) as f:
             return json.load(f)
     except json.JSONDecodeError as ex:
-        e(f"{label}: Invalid JSON — {ex}")
+        print(f"  ERROR: {label}: Invalid JSON — {ex}")
     except FileNotFoundError:
-        e(f"{label}: File not found")
+        print(f"  ERROR: {label}: File not found")
     return None
 
+
+# ── Load metamodel ──────────────────────────────────────────────
 metamodel = load_json(METAMODEL_PATH, "metamodel.json")
 if metamodel is None:
     sys.exit(1)
@@ -49,7 +61,6 @@ ID_PREFIXES = {
 
 ENUMS = metamodel.get("enums", {})
 
-# Cardinality → expected JSON type for the viaField
 CARD_TYPE = {
     "one-to-one": "string",
     "many-to-one": "string",
@@ -61,127 +72,228 @@ CARD_TYPE = {
 def check_field_type(value, expected, field, eid):
     if expected == "array":
         if not isinstance(value, list):
-            e(f"{eid}: Field '{field}' must be an array, got {type(value).__name__}")
+            print(f"  ERROR: {eid}: Field '{field}' must be an array, got {type(value).__name__}")
+            return False
     elif expected == "string":
         if value is not None and not isinstance(value, str):
-            e(f"{eid}: Field '{field}' must be a string, got {type(value).__name__}")
+            print(f"  ERROR: {eid}: Field '{field}' must be a string, got {type(value).__name__}")
+            return False
+    return True
 
 
-def validate_catalog(catalog_name):
-    d = os.path.join(CATALOGS_DIR, catalog_name)
-    fp = os.path.join(d, f"{catalog_name}.json")
-    mp = os.path.join(d, f"{catalog_name}-Meta.json")
+# ── 1. JSON Syntax Check ────────────────────────────────────────
+section("JSON Syntax")
 
-    if not os.path.isdir(d):
-        e(f"Catalog directory missing: {d}")
-        return None
+json_errors = []
+for cname in sorted(entity_by_catalog):
+    fp = os.path.join(CATALOGS_DIR, cname, f"{cname}.json")
+    mp = os.path.join(CATALOGS_DIR, cname, f"{cname}-Meta.json")
+    for path, label in [(fp, f"{cname}.json"), (mp, f"{cname}-Meta.json")]:
+        if os.path.exists(path):
+            try:
+                json.load(open(path))
+            except json.JSONDecodeError as ex:
+                print(f"  ERROR: {label}: {ex}")
+                json_errors.append(label)
 
-    entries = load_json(fp, f"{catalog_name}.json")
-    meta = load_json(mp, f"{catalog_name}-Meta.json")
+end_section("JSON Syntax", json_errors)
 
-    if entries is None:
-        return None
-    if not isinstance(entries, list):
-        e(f"{catalog_name}.json: top-level must be a JSON array")
-        return None
+# ── 2. Meta File Structure ──────────────────────────────────────
+section("Meta File Structure")
 
-    entity = entity_by_catalog.get(catalog_name)
+meta_errors = []
+for cname in sorted(entity_by_catalog):
+    mp = os.path.join(CATALOGS_DIR, cname, f"{cname}-Meta.json")
+    meta = load_json(mp, f"{cname}-Meta.json")
+    if meta is None:
+        meta_errors.append(cname)
+        continue
+    if "fields" not in meta:
+        print(f"  ERROR: {cname}-Meta.json: missing 'fields' key")
+        meta_errors.append(cname)
+    if "catalogName" not in meta:
+        print(f"  ERROR: {cname}-Meta.json: missing 'catalogName' key")
+        meta_errors.append(cname)
+
+end_section("Meta File Structure", meta_errors)
+
+# ── 3. Metamodel Conformance ────────────────────────────────────
+section("Metamodel Conformance")
+
+mm_errors = []
+for cname in sorted(entity_by_catalog):
+    fp = os.path.join(CATALOGS_DIR, cname, f"{cname}.json")
+    entries = load_json(fp, f"{cname}.json")
+    if entries is None or not isinstance(entries, list):
+        if entries is None or not isinstance(entries, list):
+            print(f"  ERROR: {cname}.json: top-level must be a JSON array")
+            mm_errors.append(cname)
+        continue
+
+    entity = entity_by_catalog.get(cname)
     if entity is None:
-        e(f"{catalog_name}: not defined in metamodel.json entityTypes")
-        return None
+        print(f"  ERROR: {cname}: not defined in metamodel.json entityTypes")
+        mm_errors.append(cname)
+        continue
 
-    expected_prefix = ID_PREFIXES.get(catalog_name, "")
     fdefs = fields_by_entity.get(entity["name"], {})
-    meta_fdefs = {f["name"]: f for f in meta["fields"]} if meta else {}
 
-    # Cardinality map for this entity
+    for entry in entries:
+        if not isinstance(entry, dict):
+            print(f"  ERROR: {cname}.json: entry is not an object: {entry}")
+            mm_errors.append(cname)
+            continue
+
+        eid = entry.get("id", f"<no-id-in-{cname}>")
+
+        for fn, fd in fdefs.items():
+            if fd.get("required") and fn not in entry:
+                print(f"  ERROR: {eid}: missing required field '{fn}' (metamodel)")
+                mm_errors.append(eid)
+
+        for fn in entry:
+            if fn not in fdefs:
+                print(f"  ERROR: {eid}: unknown field '{fn}'")
+                mm_errors.append(eid)
+
+        for fn, val in entry.items():
+            if fn in fdefs:
+                if not check_field_type(val, fdefs[fn]["type"], fn, eid):
+                    mm_errors.append(eid)
+
+end_section("Metamodel Conformance", mm_errors)
+
+# ── 4. ID Prefix Convention ────────────────────────────────────
+section("ID Prefix Convention")
+
+id_errors = []
+for cname in sorted(entity_by_catalog):
+    fp = os.path.join(CATALOGS_DIR, cname, f"{cname}.json")
+    entries = load_json(fp, f"{cname}.json")
+    if not entries:
+        continue
+
+    expected_prefix = ID_PREFIXES.get(cname, "")
+    if not expected_prefix:
+        continue
+
+    for entry in entries:
+        eid = entry.get("id", "")
+        if not str(eid).startswith(expected_prefix):
+            print(f"  ERROR: {eid}: ID does not start with expected prefix '{expected_prefix}'")
+            id_errors.append(eid)
+
+end_section("ID Prefix Convention", id_errors)
+
+# ── 5. Cardinality ──────────────────────────────────────────────
+section("Cardinality")
+
+card_errors = []
+for cname in sorted(entity_by_catalog):
+    entity = entity_by_catalog.get(cname)
+    if entity is None:
+        continue
+
     card_map = {}
     for rel in metamodel.get("relationships", []):
         if rel["source"] == entity["name"] and rel.get("viaField"):
             card_map[rel["viaField"]] = rel["cardinality"]
 
+    if not card_map:
+        continue
+
+    fp = os.path.join(CATALOGS_DIR, cname, f"{cname}.json")
+    entries = load_json(fp, f"{cname}.json")
+    if not entries:
+        continue
+
     for entry in entries:
-        if not isinstance(entry, dict):
-            e(f"{catalog_name}.json: entry is not an object: {entry}")
-            continue
-
-        eid = entry.get("id", f"<no-id-in-{catalog_name}>")
-
-        if expected_prefix and not str(eid).startswith(expected_prefix):
-            e(f"{eid}: ID does not start with expected prefix '{expected_prefix}'")
-
-        for fn, fd in fdefs.items():
-            if fd.get("required") and fn not in entry:
-                e(f"{eid}: missing required field '{fn}' (metamodel)")
-
-        for fn, fd in meta_fdefs.items():
-            if fd.get("required") and fn not in entry:
-                e(f"{eid}: missing required field '{fn}' (meta file)")
-
-        for fn in entry:
-            if fn not in fdefs:
-                e(f"{eid}: unknown field '{fn}'")
-
-        for fn, val in entry.items():
-            if fn in fdefs:
-                check_field_type(val, fdefs[fn]["type"], fn, eid)
-
+        eid = entry.get("id", "")
         for fn, card in card_map.items():
-            if fn in entry:
-                wanted = CARD_TYPE.get(card)
-                if wanted == "array" and not isinstance(entry[fn], list):
-                    e(f"{eid}: field '{fn}' has cardinality {card} but is not an array")
-                elif wanted == "string" and isinstance(entry[fn], list):
-                    e(f"{eid}: field '{fn}' has cardinality {card} but is an array")
+            if fn not in entry:
+                continue
+            wanted = CARD_TYPE.get(card)
+            if wanted == "array" and not isinstance(entry[fn], list):
+                print(f"  ERROR: {eid}: field '{fn}' has cardinality {card} but is not an array")
+                card_errors.append(eid)
+            elif wanted == "string" and isinstance(entry[fn], list):
+                print(f"  ERROR: {eid}: field '{fn}' has cardinality {card} but is an array")
+                card_errors.append(eid)
+
+end_section("Cardinality", card_errors)
+
+# ── 6. Enum Values ──────────────────────────────────────────────
+section("Enum Values")
+
+enum_errors = []
+for cname in sorted(entity_by_catalog):
+    entity = entity_by_catalog.get(cname)
+    if entity is None:
+        continue
+
+    fp = os.path.join(CATALOGS_DIR, cname, f"{cname}.json")
+    entries = load_json(fp, f"{cname}.json")
+    if not entries:
+        continue
+
+    for entry in entries:
+        eid = entry.get("id", "")
 
         if entity["name"] == "TechnologyStandard":
             val = entry.get("status")
             if val is not None:
-                enum_def = ENUMS.get("TechnologyStandardStatus")
-                if enum_def and val not in enum_def["values"]:
-                    e(f"{eid}: status '{val}' invalid — allowed: {enum_def['values']}")
+                edef = ENUMS.get("TechnologyStandardStatus")
+                if edef and val not in edef["values"]:
+                    print(f"  ERROR: {eid}: status '{val}' invalid — allowed: {edef['values']}")
+                    enum_errors.append(eid)
 
         if entity["name"] == "InfrastructureComponent":
             val = entry.get("type")
             if val is not None:
-                enum_def = ENUMS.get("InfrastructureComponentType")
-                if enum_def and val not in enum_def["values"]:
-                    e(f"{eid}: type '{val}' invalid — allowed: {enum_def['values']}")
+                edef = ENUMS.get("InfrastructureComponentType")
+                if edef and val not in edef["values"]:
+                    print(f"  ERROR: {eid}: type '{val}' invalid — allowed: {edef['values']}")
+                    enum_errors.append(eid)
 
         if entity["name"] == "Permission":
             val = entry.get("accessLevel")
             if val is not None:
-                enum_def = ENUMS.get("PermissionAccessLevel")
-                if enum_def and val not in enum_def["values"]:
-                    e(f"{eid}: accessLevel '{val}' invalid — allowed: {enum_def['values']}")
+                edef = ENUMS.get("PermissionAccessLevel")
+                if edef and val not in edef["values"]:
+                    print(f"  ERROR: {eid}: accessLevel '{val}' invalid — allowed: {edef['values']}")
+                    enum_errors.append(eid)
 
-    return entries
+end_section("Enum Values", enum_errors)
 
+# ── 7. Cross-References ─────────────────────────────────────────
+section("Cross-References")
 
-# ── Pass 1: validate each catalog ──────────────────────────────────
+# Build ID index
 all_by_id = {}
-
 for cname in sorted(entity_by_catalog):
-    entries = validate_catalog(cname)
+    fp = os.path.join(CATALOGS_DIR, cname, f"{cname}.json")
+    entries = load_json(fp, f"{cname}.json")
     if entries:
         for ent in entries:
             eid = ent.get("id")
             if eid:
                 all_by_id[eid] = (cname, ent)
 
-# ── Pass 2: cross-reference validation ────────────────────────────
+xref_errors = []
+
 def check_ref(val, field, source_id):
     if val is None or val == "":
         return
     if val not in all_by_id:
-        e(f"{source_id}: field '{field}' references '{val}' which does not exist")
+        print(f"  ERROR: {source_id}: field '{field}' references '{val}' which does not exist")
+        xref_errors.append(f"{source_id}.{field}->{val}")
 
 for cname in sorted(entity_by_catalog):
     entity = entity_by_catalog.get(cname)
     if entity is None:
         continue
     fp = os.path.join(CATALOGS_DIR, cname, f"{cname}.json")
-    entries = load_json(fp, f"{cname}.json (ref-pass)")
+    entries = load_json(fp, f"{cname}.json")
     if not entries:
         continue
 
@@ -198,12 +310,25 @@ for cname in sorted(entity_by_catalog):
                     else:
                         check_ref(val, field, eid)
 
-# ── Summary ────────────────────────────────────────────────────────
+end_section("Cross-References", xref_errors)
+
+# ── Final Summary ───────────────────────────────────────────────
 print()
 print("=" * 60)
-print(f"  Errors: {len(errors)}")
-if errors:
-    print("  VALIDATION FAILED")
+print(f"  {'SUITE':<30} {'RESULT':<8}  ERRORS")
+print(f"  {'─'*30} {'─'*8}  ─────")
+
+total_fail = 0
+for name in ["JSON Syntax", "Meta File Structure", "Metamodel Conformance",
+             "ID Prefix Convention", "Cardinality", "Enum Values", "Cross-References"]:
+    status, count = results.get(name, (PASS, 0))
+    if status == FAIL:
+        total_fail += 1
+    print(f"  {name:<30} {status:<8}  {count}")
+
+print()
+if total_fail:
+    print(f"  ❌  {total_fail} of {len(results)} suites FAILED")
     sys.exit(1)
 else:
-    print("  ALL CHECKS PASSED")
+    print(f"  ✅  ALL {len(results)} suites PASSED")
