@@ -575,8 +575,17 @@ function resolveEdges() {
   const currentEdgeKeys = new Set(state.edges.get().map(e => e.from + '->' + e.to));
   const toAdd = [];
 
+  // Map entity type names to catalog names (e.g. ApplicationComponent → ApplicationComponents)
+  const typeToCatalog = {};
+  for (const et of (state.meta?.entityTypes || [])) {
+    typeToCatalog[et.name] = et.catalog;
+  }
+
   for (const rel of (state.meta?.relationships || [])) {
-    const sourceEntries = state.entries[rel.source] || [];
+    const sourceCatalog = typeToCatalog[rel.source];
+    const targetCatalog = typeToCatalog[rel.target];
+    if (!sourceCatalog || !targetCatalog) continue;
+    const sourceEntries = state.entries[sourceCatalog] || [];
     const relColor = getRelColor(rel.description);
 
     for (const entry of sourceEntries) {
@@ -620,15 +629,18 @@ function updateNodeColors() {
   }
   if (searchActive) {
     const eVisible = state.edges.get();
+    // Build catalog → entity type mapping (inverse of typeToCatalog)
+    const catalogToType = {};
+    for (const et of (state.meta?.entityTypes || [])) {
+      catalogToType[et.catalog] = et.name;
+    }
     for (const edge of eVisible) {
       const sDim = state.dimmedNodes.has(edge.from);
       const tDim = state.dimmedNodes.has(edge.to);
+      const srcType = catalogToType[state.entryMap[edge.from]?.catalog];
+      const tgtType = catalogToType[state.entryMap[edge.to]?.catalog];
       const rel = state.meta?.relationships.find(r => {
-        const src = state.entryMap[edge.from]?.catalog;
-        const tgt = state.entryMap[edge.to]?.catalog;
-        const srcMatch = src === r.source;
-        const tgtMatch = tgt === r.target;
-        return srcMatch && tgtMatch;
+        return srcType === r.source && tgtType === r.target;
       });
       const relColor = rel ? getRelColor(rel.description) : { color: '#95a5a6' };
       state.edges.update({
