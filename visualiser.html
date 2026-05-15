@@ -436,8 +436,8 @@ function initGraph() {
   const options = {
     groups,
     nodes: {
-      font: { color: getComputedStyle(document.documentElement).getPropertyValue('--node-font').trim() },
-      margin: { top: 6, right: 10, bottom: 6, left: 10 },
+      font: { color: getComputedStyle(document.documentElement).getPropertyValue('--node-font').trim(), size: 13 },
+      margin: { top: 8, right: 14, bottom: 8, left: 14 },
     },
     edges: {
       arrows: { to: { enabled: true, scaleFactor: 0.8 } },
@@ -447,15 +447,17 @@ function initGraph() {
     },
     physics: {
       enabled: true,
+      solver: 'barnesHut',
       barnesHut: {
-        gravitationalConstant: -6000,
+        gravitationalConstant: -12000,
         centralGravity: 0.3,
-        springLength: 180,
-        springConstant: 0.03,
-        damping: 0.1,
+        springLength: 250,
+        springConstant: 0.005,
+        damping: 0.09,
       },
-      stabilization: { iterations: 500, updateInterval: 50 },
-      maxVelocity: 30,
+      stabilization: { iterations: 1000, updateInterval: 25 },
+      maxVelocity: 10,
+      minVelocity: 0.75,
     },
     interaction: {
       hover: true,
