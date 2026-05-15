@@ -25,12 +25,16 @@ Aligned to **TOGAF** conventions. Aimed at **governance and clarity**, not infra
 │   ├── Permissions/
 │   └── TechnologyStandards/
 ├── rules/
-│   └── *.md                    # Governance skill files (auto-discovered)
+│   └── *.md                    # Governance rule files (auto-evaluated by CI)
+├── skills/
+│   └── *.md                    # Agent skill files (loaded on demand)
 └── .github/
     ├── workflows/
-    │   └── validate.yml        # CI: validates JSON, schema, cardinality, refs
+    │   └── validate.yml        # CI: validates catalogs + skills
     └── scripts/
-        └── validate_catalogs.py
+        ├── validate_catalogs.py # Validates JSON, schema, cardinality, refs
+        ├── validate_skills.py   # Validates skill file metadata
+        └── validate_all.py      # Runs both validation suites
 ```
 
 Each catalog directory contains:
@@ -71,7 +75,8 @@ The seed data models a mid-size **Electrical Distribution Utility** using Azure,
    - **Stage 1** — Structural validation (JSON is well-formed, matches schema)
    - **Stage 2** — Cross-reference and cardinality checks (no orphaned IDs, correct types)
    - **Stage 3** — Enum validation (status, type, accessLevel values are valid)
-   - **Stage 4** — Diff analysis (changes are summarised in the PR)
+   - **Stage 4** — Skill metadata validation (frontmatter correctness)
+   - **Stage 5** — Diff analysis (changes are summarised in the PR)
 5. **Merge** — The architecture team reviews and merges to `main`
 
 ---
@@ -96,7 +101,7 @@ Create a branch, make a change to any catalog JSON file, and open a pull request
 To run validation locally before pushing:
 
 ```bash
-python3 .github/scripts/validate_catalogs.py
+python3 .github/scripts/validate_all.py
 ```
 
 ---
@@ -129,9 +134,9 @@ A single-file HTML application that loads catalogs from the repo and renders the
 
 ---
 
-## Writing Skill Files
+## Governance Rules
 
-Skill files are natural-language Markdown files in `rules/`. They are auto-discovered — every `.md` file in that directory becomes an active rule.
+Governance rules are natural-language Markdown files in `rules/`. They are auto-discovered — every `.md` file in that directory is evaluated by CI on every PR.
 
 ### Format
 
@@ -164,6 +169,46 @@ satisfy this constraint.
 - Reference catalog names for clarity (e.g. "every Application Component should...")
 - Use `error` severity for hard constraints, `warning` for recommendations
 - Rules can be added, modified, or removed in any branch and take effect on the next PR
+
+## Agent Skills
+
+Agent skills in `skills/*.md` provide specialised instructions that coding agents can load on demand at the user's direction. Unlike governance rules in `rules/`, they are not auto-evaluated by CI.
+
+### Format
+
+Each skill file uses YAML frontmatter with required fields:
+
+```markdown
+---
+name: <kebab-case-name>
+description: <one-line description of when to use this skill>
+---
+
+# <Title>
+
+<full instructions in markdown>
+```
+
+### Example
+
+```markdown
+---
+name: content-review
+description: Review catalog entries for offensive language and unsuitable topics.
+---
+
+# Content Review Skill
+
+Review EA catalog entries for professional tone, respectful content,
+and suitability for an enterprise architecture context.
+```
+
+### Adding a Skill
+
+1. Create `skills/<kebab-case-name>.md`
+2. Add YAML frontmatter with `name` and `description` (must match filename)
+3. Write instructions in markdown below the frontmatter
+4. CI validates frontmatter correctness automatically
 
 ---
 

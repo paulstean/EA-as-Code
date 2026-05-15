@@ -63,7 +63,7 @@ Write realistic, informative descriptions — not placeholder text. Each descrip
 5. Update the `catalogs` list in `.github/workflows/pr-review.yml`
 6. Add seed data entries
 
-## Adding a Skill File
+## Adding a Governance Rule
 
 1. Create a `.md` file in `rules/`
 2. Use the format:
@@ -79,6 +79,25 @@ Write realistic, informative descriptions — not placeholder text. Each descrip
 3. Reference catalog field names with backticks
 4. The rule is auto-discovered — no manifest registration needed
 
+## Adding an Agent Skill
+
+1. Create a `.md` file in `skills/`
+2. Use YAML frontmatter format:
+
+```markdown
+---
+name: <kebab-case-name>
+description: <one-line description>
+---
+
+# <Title>
+
+<instructions in markdown>
+```
+
+3. The `name` field must match the filename slug (without `.md`)
+4. CI validates frontmatter metadata automatically
+
 ## Pull Request Checklist
 
 Before opening a PR, verify:
@@ -88,3 +107,5 @@ Before opening a PR, verify:
 - [ ] The PR description contains change description, project name, and business benefits
 - [ ] Descriptions are realistic and informative
 - [ ] If adding a new catalog, `metamodel.json` is updated
+- [ ] If adding a skill, `skills/<name>.md` has valid YAML frontmatter
+- [ ] All validations pass: `python3 .github/scripts/validate_all.py`
