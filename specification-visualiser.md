@@ -37,7 +37,7 @@ The visualiser loads all data from the sibling `catalogs/` directories and `meta
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│  ⚡ EA Visualiser                                    [🌙 Theme]  │
+│  ⚡ EA Visualiser                                    [Theme]  │
 ├───────────────┬──────────────────────────────────────────────────┤
 │  Controls     │                                                  │
 │               │                                                  │
@@ -89,10 +89,10 @@ The layout is a 2-column split. Left sidebar is fixed at 280px. Graph canvas fil
 - Styled button at the top of the sidebar: **📂 Open Repository**
 - Calls `window.showDirectoryPicker({ mode: 'read', startIn: 'documents' })`
 - On success:
-  1. Recursively walk the selected directory for all files matching `catalogs/*/*.json`
-  2. Parse all found JSON files
-  3. Match files against known catalog names (from `metamodel.json`)
-  4. Load `metamodel.json` from the repo root
+  1. Recursively walk the selected directory for all files matching `catalogs/*/*.json` and `metamodel.json`
+  2. Parse `metamodel.json` first to get the list of known catalog names
+  3. Match remaining found JSON files against known catalog names (the file stem must match exactly, e.g. `ApplicationComponents.json`)
+  4. Parse all matching catalog JSON files
   5. Populate the catalog multi-select and legend
   6. Show a success toast: *"Loaded N catalogs from {folder name}"*
   7. Graph remains empty — user selects catalogs next
@@ -185,8 +185,9 @@ Error scenarios to handle:
 
 - Each node's `id` is the entry's `id` field
 - Each node's `label` is the entry's `name` field
-- Each node stores the full entry object in its `title` property (accessible on click)
-- Each node stores its catalog type in a custom field for filtering
+- Each node has `title` set to a concise hover tooltip string: *"{name} — {catalogType}"*
+- Full entry data is stored in a separate `Map<nodeId, entryObject>` lookup table, not on the vis-network node. On click, the detail panel retrieves the entry by node ID from this map
+- Each vis-network node stores its catalog type in a custom `group` property for programmematic filtering
 
 ### 5.3 Edge Rendering
 
@@ -218,13 +219,14 @@ physics: {
   stabilization: {
     iterations: 500,
     updateInterval: 50
-  }
+  },
+  maxVelocity: 30
 }
 ```
 
 - Physics auto-stabilises after each change (catalog add/remove, filter)
 - Physics is disabled during user drag (vis-network default)
-- `maxVelocity` capped to avoid explosion on large changes
+- `maxVelocity: 30` caps node speed to prevent explosive layout shifts
 
 ### 5.5 Interaction
 
@@ -261,7 +263,8 @@ Example: If the entry has `"owningBusinessUnitId": "bu-003"`, the detail panel d
 ```
 Owning Business Unit: Finance (BusinessUnits)
 ```
-Clicking "Finance" triggers `network.selectNodes(['bu-003'])` and pans to it.
+If the referenced node's catalog is currently visible in the graph, the name is rendered as a clickable link. Clicking triggers `network.selectNodes(['bu-003'])` and pans to it.
+If the referenced node's catalog is not visible, the name is displayed as plain text (dimmed, not clickable) — the user must select that catalog first to navigate to it.
 
 ### 6.4 Dismissal
 
@@ -324,7 +327,7 @@ vis-network options:
 ```js
 {
   nodes: {
-    color: { background: catalogColor + '1A', border: catalogColor },
+    color: { background: catalogColor + '26', border: catalogColor },
     font: { color: '#1a1a2e' }
   },
   backgroundColor: '#f5f7fa'
