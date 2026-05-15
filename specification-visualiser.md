@@ -209,24 +209,28 @@ Error scenarios to handle:
 ```js
 physics: {
   enabled: true,
+  solver: 'barnesHut',
   barnesHut: {
-    gravitationalConstant: -6000,
-    centralGravity: 0.3,
-    springLength: 180,
-    springConstant: 0.03,
-    damping: 0.1
+    gravitationalConstant: -800,
+    centralGravity: 0.1,
+    springLength: 150,
+    springConstant: 0.01,
+    damping: 0.09
   },
   stabilization: {
-    iterations: 500,
-    updateInterval: 50
+    iterations: 1000,
+    updateInterval: 25
   },
-  maxVelocity: 30
+  maxVelocity: 15,
+  minVelocity: 0.75
 }
 ```
 
 - Physics auto-stabilises after each change (catalog add/remove, filter)
 - Physics is disabled during user drag (vis-network default)
-- `maxVelocity: 30` caps node speed to prevent explosive layout shifts
+- `gravitationalConstant: -800` keeps nodes loosely packed without excessive white space
+- `springLength: 150` and `springConstant: 0.01` produce short, flexible edges
+- `centralGravity: 0.1` gently pulls disconnected clusters toward centre
 
 ### 5.5 Interaction
 
