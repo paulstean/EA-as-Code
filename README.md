@@ -5,6 +5,7 @@ Enterprise Architecture as Code — a git-based repository that stores an organi
 Aligned to **TOGAF** conventions. Aimed at **governance and clarity**, not infrastructure-level detail.
 
 ---
+```
 /
 ├── metamodel.json              # Full EA metamodel (11 entity types, relationships, enums)
 ├── specification.md            # Full system specification
@@ -66,11 +67,11 @@ The seed data models a mid-size **Electrical Distribution Utility** using Azure,
    - What is changing and why
    - The project or initiative driving the change
    - Expected business benefits
- 4. **Review** — The CI pipeline runs automatically:
-    - **Stage 1** — Structural validation (JSON is well-formed, matches schema)
-    - **Stage 2** — Cross-reference and cardinality checks (no orphaned IDs, correct types)
-    - **Stage 3** — Enum validation (status, type, accessLevel values are valid)
-    - **Stage 4** — Diff analysis (changes are summarised in the PR)
+4. **Review** — The CI pipeline runs automatically:
+   - **Stage 1** — Structural validation (JSON is well-formed, matches schema)
+   - **Stage 2** — Cross-reference and cardinality checks (no orphaned IDs, correct types)
+   - **Stage 3** — Enum validation (status, type, accessLevel values are valid)
+   - **Stage 4** — Diff analysis (changes are summarised in the PR)
 5. **Merge** — The architecture team reviews and merges to `main`
 
 ---
