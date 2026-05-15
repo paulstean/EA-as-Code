@@ -442,8 +442,9 @@ function initGraph() {
       },
       borderWidth: 2,
       borderWidthSelected: 3,
-      font: { size: 12, face: 'Segoe UI, sans-serif' },
+      font: { size: 11, face: 'Segoe UI, sans-serif' },
       shadow: { enabled: true },
+      margin: { top: 6, right: 10, bottom: 6, left: 10 },
     };
   }
 
@@ -544,9 +545,8 @@ function addEntryToGraph(entryId) {
   const pos = state.flowPositions[entryId];
   state.nodes.add({
     id: entry.id,
-    label: entry.name,
+    label: toTitle(catalog) + '\n' + entry.name,
     group: catalog,
-    title: entry.name + ' \u2014 ' + toTitle(catalog),
     x: pos?.x,
     y: pos?.y,
   });
@@ -572,9 +572,8 @@ function addCatalogAllToGraph(catalog) {
     const pos = state.flowPositions[entry.id];
     batch.push({
       id: entry.id,
-      label: entry.name,
+      label: toTitle(catalog) + '\n' + entry.name,
       group: catalog,
-      title: entry.name + ' \u2014 ' + toTitle(catalog),
       x: pos?.x,
       y: pos?.y,
     });
