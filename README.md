@@ -5,13 +5,12 @@ Enterprise Architecture as Code — a git-based repository that stores an organi
 Aligned to **TOGAF** conventions. Aimed at **governance and clarity**, not infrastructure-level detail.
 
 ---
-
-## Repository Structure
-
-```
 /
 ├── metamodel.json              # Full EA metamodel (11 entity types, relationships, enums)
 ├── specification.md            # Full system specification
+├── specification-visualiser.md # Visualiser specification
+├── visualiser.html             # Single-file graph visualiser (open in browser)
+├── AGENTS.md                   # Instructions for AI coding agents
 ├── catalogs/
 │   ├── BusinessUnits/          # +-Meta.json
 │   ├── BusinessProcesses/
@@ -118,6 +117,34 @@ Create a branch, make a change to any catalog JSON file, and open a pull request
 
 ---
 
+## EA Visualiser
+
+A single-file HTML application that loads catalogs from the repo and renders them as an interactive force-directed graph. No build step, no server — just open in Chrome or Edge.
+
+### How to Use
+
+1. Clone the repo: `git clone <repo-url>`
+2. Open `visualiser.html` in Chrome or Edge
+3. Click **Open Repository** and select the cloned repo folder
+4. Check catalogs in the sidebar to add nodes to the graph
+5. Click any node to see its full details with resolved references
+
+### Features
+
+| Feature | Description |
+|---|---|
+| **Force-directed graph** | Nodes spring apart, connected ones cluster. Powered by vis-network |
+| **Catalog selection** | Multi-select checkboxes. Add/remove entire catalogs with instant graph update |
+| **Select All / Deselect All** | One-click toggle for all catalogs |
+| **Search / filter** | Type to dim non-matching nodes by name or description |
+| **Node detail panel** | Click a node to see all its fields with resolved reference links |
+| **Reference navigation** | Click a resolved reference (e.g. "SAP S/4HANA") to jump to that node |
+| **Hover highlight** | Hover a node to highlight connected nodes and dim the rest |
+| **Dark / light theme** | Toggle in the header. Preference saved to localStorage |
+| **Start empty** | Canvas is blank until you select catalogs — build the view incrementally |
+
+---
+
 ## Writing Skill Files
 
 Skill files are natural-language Markdown files in `rules/`. They are auto-discovered — every `.md` file in that directory becomes an active rule.
@@ -171,7 +198,6 @@ satisfy this constraint.
 
 | Phase | Description |
 |---|---|
-| **Visualisation Dashboard** | Web UI for browsing catalogs and relationship graphs |
 | **Natural Language Query** | Ask plain-English questions about the architecture |
 | **Azure DevOps Port** | Port CI from GitHub Actions to Azure DevOps pipelines |
 | **Impact Analysis** | Automated assessment of what else a change affects |
