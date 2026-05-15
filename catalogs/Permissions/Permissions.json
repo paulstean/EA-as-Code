@@ -118,5 +118,13 @@
     "applicationComponentId": "app-007",
     "accessLevel": "Read",
     "description": "Field Crew can view historical outage and asset data in Azure Data Lake."
+  },
+  {
+    "id": "perm-016",
+    "name": "Faculty AI Azure Databricks Admin",
+    "businessUserGroupId": "bug-010",
+    "applicationComponentId": "app-010",
+    "accessLevel": "Admin",
+    "description": "Faculty AI have full administration access to Azure Databricks for data engineering, analytics, and machine learning workloads."
   }
 ]

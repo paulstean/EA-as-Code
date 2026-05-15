@@ -94,5 +94,29 @@
     "targetApplicationComponentId": "app-007",
     "dataEntityIds": ["de-005", "de-006", "de-007", "de-019"],
     "description": "CRM exports customer, premise, meter, and consumption data to Azure Data Lake for analytics."
+  },
+  {
+    "id": "flow-013",
+    "name": "Incident Data from ADMS to Azure Databricks",
+    "sourceApplicationComponentId": "app-004",
+    "targetApplicationComponentId": "app-010",
+    "dataEntityIds": ["de-023", "de-024"],
+    "description": "ADMS streams incident and outage event data to Azure Databricks for predictive analytics and AI modeling."
+  },
+  {
+    "id": "flow-014",
+    "name": "Asset Data from Data Lake to Azure Databricks",
+    "sourceApplicationComponentId": "app-007",
+    "targetApplicationComponentId": "app-010",
+    "dataEntityIds": ["de-001", "de-002", "de-003", "de-004"],
+    "description": "Asset data from Azure Data Lake is ingested into Azure Databricks for asset health prediction and maintenance optimization."
+  },
+  {
+    "id": "flow-015",
+    "name": "Weather Data from Integration Bus to Azure Databricks",
+    "sourceApplicationComponentId": "app-008",
+    "targetApplicationComponentId": "app-010",
+    "dataEntityIds": ["de-025", "de-026"],
+    "description": "External weather data ingested through Azure Integration Bus flows to Azure Databricks for weather-impact analysis."
   }
 ]
