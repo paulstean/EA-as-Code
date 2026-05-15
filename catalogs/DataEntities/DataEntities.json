@@ -130,5 +130,29 @@
     "name": "Inventory Transaction",
     "dataDomainId": "dd-007",
     "description": "Inventory movement record for receipts, issues, transfers, and adjustments."
+  },
+  {
+    "id": "de-023",
+    "name": "Incident Report",
+    "dataDomainId": "dd-008",
+    "description": "Detailed record of network incidents including fault type, location, severity, timestamp, and resolution status."
+  },
+  {
+    "id": "de-024",
+    "name": "Outage Event",
+    "dataDomainId": "dd-008",
+    "description": "Record of unplanned power outages including affected area, customer count, duration, and root cause analysis."
+  },
+  {
+    "id": "de-025",
+    "name": "Weather Observation",
+    "dataDomainId": "dd-009",
+    "description": "Real-time weather data from monitoring stations including temperature, wind speed, precipitation, and lightning strikes."
+  },
+  {
+    "id": "de-026",
+    "name": "Weather Forecast",
+    "dataDomainId": "dd-009",
+    "description": "Forecasted weather conditions including temperature ranges, severe weather warnings, and probability of precipitation."
   }
 ]

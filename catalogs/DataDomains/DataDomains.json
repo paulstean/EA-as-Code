@@ -40,5 +40,17 @@
     "name": "Materials & Inventory",
     "owningBusinessUnitId": "bu-007",
     "description": "Data about inventory stock items, purchase orders, and warehouse transactions."
+  },
+  {
+    "id": "dd-008",
+    "name": "Incident Data",
+    "owningBusinessUnitId": "bu-001",
+    "description": "Data about network incidents including fault reports, outage events, safety incidents, and emergency response actions."
+  },
+  {
+    "id": "dd-009",
+    "name": "Weather Data",
+    "owningBusinessUnitId": "bu-001",
+    "description": "Meteorological data including real-time weather observations, forecasts, and historical weather patterns affecting network operations."
   }
 ]

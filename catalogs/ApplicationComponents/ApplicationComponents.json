@@ -61,5 +61,11 @@
     "technologyStandardId": "ts-001",
     "infrastructureComponentId": "infra-005",
     "description": "Internal employee portal for self-service HR, procurement requests, and company news."
+  },
+  {
+    "id": "app-010",
+    "name": "Azure Databricks",
+    "technologyStandardId": "ts-001",
+    "description": "Azure Databricks analytics platform for data engineering, data science, and machine learning workloads supporting the ERT project."
   }
 ]
