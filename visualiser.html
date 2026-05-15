@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EA Visualiser</title>
+<meta name="color-scheme" content="dark light">
+<script src="https://unpkg.com/vis-network@9.1.2/standalone/umd/vis-network.min.js"></script>
+<style>
+:root {
+  --bg-primary: #1a1a2e;
+  --bg-secondary: #16213e;
+  --bg-card: #0f3460;
+  --text-primary: #e8e8e8;
+  --text-secondary: #8899b4;
+  --text-muted: #5a6a84;
+  --border: #2a2a4a;
+  --accent: #4fc3f7;
+  --shadow: rgba(0,0,0,0.4);
+  --hover-highlight: rgba(79,195,247,0.15);
+  --success: #2ecc71;
+  --error: #e74c3c;
+  --graph-bg: #1a1a2e;
+  --node-font: #e8e8e8;
+  --panel-bg: #16213e;
+  --swatch-alpha: 15%;
+}
+[data-theme="light"] {
+  --bg-primary: #f5f7fa;
+  --bg-secondary: #ffffff;
+  --bg-card: #eef1f5;
+  --text-primary: #1a1a2e;
+  --text-secondary: #555577;
+  --text-muted: #9999bb;
+  --border: #d0d5e0;
+  --accent: #1976d2;
+  --shadow: rgba(0,0,0,0.1);
+  --hover-highlight: rgba(25,118,210,0.1);
+  --graph-bg: #f5f7fa;
+  --node-font: #1a1a2e;
+  --panel-bg: #ffffff;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg-primary);color:var(--text-primary)}
+
+/* Header */
+header{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:var(--bg-secondary);border-bottom:1px solid var(--border);height:48px;flex-shrink:0}
+header h1{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px}
+#themeToggle{background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:16px;color:var(--text-primary)}
+
+/* Main layout */
+#app{display:flex;flex-direction:column;height:100vh}
+
+#main{display:flex;flex:1;overflow:hidden}
+
+/* Sidebar */
+#sidebar{width:280px;min-width:280px;background:var(--bg-secondary);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0}
+#sidebar > *{padding:12px 14px;border-bottom:1px solid var(--border)}
+#sidebar > :last-child{border-bottom:none}
+
+/* Open button */
+#openBtn{display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;border:1px solid var(--accent);border-radius:8px;background:transparent;color:var(--accent);font-size:14px;font-weight:600;cursor:pointer;transition:all 0.15s}
+#openBtn:hover{background:var(--accent);color:var(--bg-primary)}
+#openBtn:disabled{opacity:0.5;cursor:not-allowed}
+#openBtn.error{color:var(--error);border-color:var(--error)}
+#openBtn.error:hover{background:var(--error);color:#fff}
+#toast{font-size:12px;margin-top:6px;min-height:18px}
+
+/* Catalog list */
+#catalogList{display:flex;flex-direction:column;gap:2px;max-height:300px;overflow-y:auto}
+.cat-item{display:flex;align-items:center;gap:8px;padding:4px 6px;border-radius:4px;cursor:pointer;font-size:13px;transition:background 0.1s}
+.cat-item:hover{background:var(--hover-highlight)}
+.cat-item input[type="checkbox"]{accent-color:var(--accent);cursor:pointer;flex-shrink:0}
+.cat-swatch{width:12px;height:12px;border-radius:3px;flex-shrink:0;border:1px solid rgba(255,255,255,0.15)}
+.cat-name{flex:1;color:var(--text-primary)}
+.cat-count{font-size:11px;color:var(--text-muted)}
+
+/* Select / Deselect all */
+#selectAllBar{display:flex;gap:12px;padding:4px 14px 8px}
+#selectAllBar a{font-size:12px;color:var(--accent);cursor:pointer;text-decoration:none}
+#selectAllBar a:hover{text-decoration:underline}
+.empty-catalogs{font-size:12px;color:var(--text-muted);padding:8px 0}
+
+/* Search */
+#searchInput{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg-primary);color:var(--text-primary);font-size:13px;outline:none;transition:border 0.15s}
+#searchInput:focus{border-color:var(--accent)}
+#searchInput::placeholder{color:var(--text-muted)}
+
+/* Legend */
+#legend{display:flex;flex-direction:column;gap:3px}
+.lgd-item{display:flex;align-items:center;gap:8px;font-size:12px;padding:2px 0}
+.lgd-swatch{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.lgd-name{flex:1;color:var(--text-secondary)}
+.lgd-count{color:var(--text-muted);font-size:11px}
+
+/* Graph */
+#graphContainer{flex:1;position:relative;overflow:hidden;background:var(--graph-bg)}
+#graph{width:100%;height:100%}
+#emptyState{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:var(--text-muted);font-size:15px;text-align:center;pointer-events:none;display:none}
+
+/* Detail panel */
+#detailPanel{display:none;background:var(--panel-bg);border-top:1px solid var(--border);max-height:280px;overflow-y:auto;flex-shrink:0;transition:max-height 0.2s}
+#detailPanel.open{display:block}
+#detailPanel .dp-header{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--panel-bg);z-index:2}
+#detailPanel .dp-header h2{font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px}
+#detailPanel .dp-close{background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:14px;color:var(--text-secondary)}
+#detailPanel .dp-body{padding:10px 16px 14px;display:grid;grid-template-columns:1fr 1fr;gap:10px 24px}
+#detailPanel .dp-section{min-width:0}
+#detailPanel .dp-section h3{font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);margin-bottom:6px;font-weight:600}
+#detailPanel .dp-field{display:flex;justify-content:space-between;gap:12px;padding:2px 0;font-size:13px;line-height:1.5}
+#detailPanel .dp-field .dp-label{color:var(--text-secondary);white-space:nowrap}
+#detailPanel .dp-field .dp-value{color:var(--text-primary);text-align:right;max-width:60%;word-break:break-word}
+#detailPanel .dp-field .dp-value a{color:var(--accent);cursor:pointer;text-decoration:none}
+#detailPanel .dp-field .dp-value a:hover{text-decoration:underline}
+#detailPanel .dp-field .dp-value .dimmed{color:var(--text-muted);cursor:default}
+#detailPanel .dp-rel{display:flex;align-items:center;gap:6px;padding:2px 0;font-size:13px}
+#detailPanel .dp-rel .arrow{color:var(--text-muted);flex-shrink:0}
+#detailPanel .dp-rel .rel-target{color:var(--accent);cursor:pointer}
+#detailPanel .dp-rel .rel-target:hover{text-decoration:underline}
+#detailPanel .dp-rel .rel-desc{color:var(--text-secondary);font-size:12px}
+#detailPanel .dp-section.empty{color:var(--text-muted);font-size:12px;font-style:italic}
+</style>
+</head>
+<body>
+<div id="app">
+<header>
+  <h1>&#x26A1; EA Visualiser</h1>
+  <button id="themeToggle" title="Toggle theme">&#x2600;&#xFE0F;</button>
+</header>
+<div id="main">
+  <aside id="sidebar">
+    <div>
+      <button id="openBtn">&#x1F4C2; Open Repository</button>
+      <div id="toast"></div>
+    </div>
+    <div>
+      <strong style="font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);display:block;margin-bottom:6px">Catalogs</strong>
+      <div id="catalogList"><div class="empty-catalogs">Open a repository first</div></div>
+    </div>
+    <div id="selectAllBar" style="display:none">
+      <a href="#" id="selectAll">Select All</a>
+      <a href="#" id="deselectAll">Deselect All</a>
+    </div>
+    <div>
+      <input id="searchInput" type="text" placeholder="&#x1F50D; Filter nodes by name or description..." disabled>
+    </div>
+    <div>
+      <strong style="font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);display:block;margin-bottom:6px">Legend</strong>
+      <div id="legend"><div class="empty-catalogs">No catalogs loaded</div></div>
+    </div>
+  </aside>
+  <div id="graphContainer">
+    <div id="graph"></div>
+    <div id="emptyState">Open a repository and select catalogs to begin</div>
+  </div>
+</div>
+<aside id="detailPanel">
+  <div class="dp-header">
+    <h2 id="dpTitle"></h2>
+    <button class="dp-close" id="dpClose">&times;</button>
+  </div>
+  <div class="dp-body" id="dpBody"></div>
+</aside>
+</div>
+
+<script>
+// ─── Constants ────────────────────────────────────────────────
+const CATALOG_COLORS = {
+  BusinessUnits: '#e74c3c',
+  BusinessProcesses: '#e67e22',
+  BusinessActivities: '#f39c12',
+  BusinessUserGroups: '#2ecc71',
+  DataDomains: '#1abc9c',
+  DataEntities: '#3498db',
+  ApplicationComponents: '#9b59b6',
+  InformationFlows: '#34495e',
+  InfrastructureComponents: '#7f8c8d',
+  Permissions: '#e84393',
+  TechnologyStandards: '#00cec9',
+};
+
+const RELATION_COLORS = [
+  { match: /contain|child/i, color: '#95a5a6', label: 'Self-referential' },
+  { match: /own|belong/i, color: '#e67e22', label: 'Belongs to / Owned by' },
+  { match: /perform/i, color: '#2ecc71', label: 'Performed by' },
+  { match: /support/i, color: '#3498db', label: 'Supported by' },
+  { match: /use|uses/i, color: '#9b59b6', label: 'Uses Technology' },
+  { match: /host/i, color: '#7f8c8d', label: 'Hosted on' },
+  { match: /send|originate/i, color: '#e74c3c', label: 'Sends information' },
+  { match: /receiv|terminate/i, color: '#e74c3c', label: 'Receives information' },
+  { match: /carri/i, color: '#1abc9c', label: 'Carries / Contains' },
+  { match: /grant|appl/i, color: '#e84393', label: 'Granted to / Applies to' },
+];
+
+function getRelColor(desc) {
+  for (const r of RELATION_COLORS) if (r.match.test(desc)) return r;
+  return { color: '#95a5a6', label: 'Other' };
+}
+
+const FIELD_LABELS = {
+  id: 'ID', name: 'Name', description: 'Description',
+  parentBusinessUnitId: 'Parent Business Unit',
+  owningBusinessUnitId: 'Owning Business Unit',
+  businessProcessId: 'Business Process',
+  businessUserGroupId: 'Business User Group',
+  supportedByApplicationComponentIds: 'Supported By',
+  dataDomainId: 'Data Domain',
+  technologyStandardId: 'Technology Standard',
+  infrastructureComponentId: 'Infrastructure',
+  sourceApplicationComponentId: 'Source Application',
+  targetApplicationComponentId: 'Target Application',
+  dataEntityIds: 'Data Entities',
+  applicationComponentId: 'Application',
+  businessUnitId: 'Business Unit',
+  type: 'Type', status: 'Status', category: 'Category',
+  accessLevel: 'Access Level',
+};
+
+// Derived from metamodel relationships: fieldName -> targetCatalog
+const FIELD_REFMAP = {
+  parentBusinessUnitId: 'BusinessUnits',
+  owningBusinessUnitId: 'BusinessUnits',
+  businessProcessId: 'BusinessProcesses',
+  businessUserGroupId: 'BusinessUserGroups',
+  supportedByApplicationComponentIds: 'ApplicationComponents',
+  dataDomainId: 'DataDomains',
+  technologyStandardId: 'TechnologyStandards',
+  infrastructureComponentId: 'InfrastructureComponents',
+  sourceApplicationComponentId: 'ApplicationComponents',
+  targetApplicationComponentId: 'ApplicationComponents',
+  dataEntityIds: 'DataEntities',
+  applicationComponentId: 'ApplicationComponents',
+};
+
+// ─── State ────────────────────────────────────────────────────
+const state = {
+  meta: null,
+  entries: {},       // catalogName -> [entry, ...]
+  entryMap: {},      // id -> { entry, catalog }
+  nodes: null,
+  edges: null,
+  network: null,
+  visibleCatalogs: new Set(),
+  dimmedNodes: new Set(),
+  selectedNodeId: null,
+  isLoading: false,
+  searchTerm: '',
+  loadedCatalogNames: [],
+};
+
+// ─── DOM refs ─────────────────────────────────────────────────
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+const openBtn = $('#openBtn');
+const toast = $('#toast');
+const catalogList = $('#catalogList');
+const selectAllBar = $('#selectAllBar');
+const selectAllBtn = $('#selectAll');
+const deselectAllBtn = $('#deselectAll');
+const searchInput = $('#searchInput');
+const legend = $('#legend');
+const graphEl = $('#graph');
+const emptyState = $('#emptyState');
+const detailPanel = $('#detailPanel');
+const dpTitle = $('#dpTitle');
+const dpBody = $('#dpBody');
+const dpClose = $('#dpClose');
+const themeToggle = $('#themeToggle');
+
+// ─── Theme ────────────────────────────────────────────────────
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  themeToggle.textContent = theme === 'dark' ? '\u2600\uFE0F' : '\uD83C\uDF19';
+  localStorage.setItem('ea-vis-theme', theme);
+  if (state.network) {
+    state.network.setOptions({
+      nodes: { font: { color: getComputedStyle(document.documentElement).getPropertyValue('--node-font').trim() } },
+      backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--graph-bg').trim(),
+    });
+  }
+}
+
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme');
+  applyTheme(cur === 'dark' ? 'light' : 'dark');
+}
+
+const savedTheme = localStorage.getItem('ea-vis-theme');
+applyTheme(savedTheme || 'dark');
+themeToggle.addEventListener('click', toggleTheme);
+
+// ─── Utility ──────────────────────────────────────────────────
+function formatFieldName(name) {
+  return FIELD_LABELS[name] || name
+    .replace(/([A-Z])/g, ' $1')
+    .replace(/^./, s => s.toUpperCase())
+    .replace(/ I d( |$)/g, ' ID$1').replace(/ Ids/g, ' IDs')
+    .trim();
+}
+
+function hexAlpha(hex, alpha) {
+  const a = Math.round(alpha * 255).toString(16).padStart(2, '0');
+  return hex + a;
+}
+
+function toTitle(str) {
+  return str.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase()).trim();
+}
+
+// ─── Directory loading (File System Access API) ───────────────
+async function loadRepository() {
+  if (state.isLoading) return;
+  try {
+    const handle = await window.showDirectoryPicker({ mode: 'read', startIn: 'documents' });
+    state.isLoading = true;
+    openBtn.disabled = true;
+    openBtn.textContent = '\uD83D\uDCC2 Loading\u2026';
+    openBtn.className = '';
+    toast.textContent = '';
+
+    // Find metamodel.json
+    let mmHandle = null;
+    try { mmHandle = await handle.getFileHandle('metamodel.json'); } catch (_) {}
+    if (!mmHandle) { throw new Error('metamodel.json not found in the selected folder'); }
+
+    const mmFile = await mmHandle.getFile();
+    const meta = JSON.parse(await mmFile.text());
+    state.meta = meta;
+
+    // Parse known catalog names from metamodel
+    const knownCatalogs = new Set((meta.entityTypes || []).map(e => e.catalog));
+    state.loadedCatalogNames = [];
+
+    // Walk catalogs directory
+    let catalogsDir = null;
+    try { catalogsDir = await handle.getDirectoryHandle('catalogs'); } catch (_) {}
+    if (!catalogsDir) { throw new Error('catalogs/ directory not found'); }
+
+    const loadedData = {};
+    for await (const [dirName, dirHandle] of catalogsDir.entries()) {
+      if (dirHandle.kind !== 'directory') continue;
+      if (!knownCatalogs.has(dirName)) continue;
+      try {
+        const fileHandle = await dirHandle.getFileHandle(dirName + '.json');
+        const file = await fileHandle.getFile();
+        const data = JSON.parse(await file.text());
+        if (!Array.isArray(data)) continue;
+        loadedData[dirName] = data;
+        state.loadedCatalogNames.push(dirName);
+      } catch (_) {}
+    }
+
+    if (state.loadedCatalogNames.length === 0) {
+      throw new Error('No matching catalog files found in catalogs/');
+    }
+
+    // Build state
+    state.entries = loadedData;
+    state.entryMap = {};
+    for (const [cat, entries] of Object.entries(loadedData)) {
+      for (const entry of entries) {
+        if (entry.id) state.entryMap[entry.id] = { entry, catalog: cat };
+      }
+    }
+
+    // Init graph
+    initGraph();
+    renderSidebar();
+    searchInput.disabled = false;
+    selectAllBar.style.display = 'flex';
+    toast.textContent = `Loaded ${state.loadedCatalogNames.length} catalogs from ${handle.name}`;
+    toast.style.color = 'var(--success)';
+    openBtn.textContent = '\uD83D\uDCC2 Reopen';
+    openBtn.className = '';
+    openBtn.disabled = false;
+    state.isLoading = false;
+  } catch (err) {
+    if (err.name === 'AbortError' || err.name === 'SecurityError') {
+      // User cancelled or permission denied
+      state.isLoading = false;
+      openBtn.disabled = false;
+      openBtn.textContent = '\uD83D\uDCC2 Open Repository';
+      openBtn.className = '';
+      return;
+    }
+    state.isLoading = false;
+    openBtn.disabled = false;
+    openBtn.textContent = '\uD83D\uDCC2 Open Repository';
+    openBtn.className = 'error';
+    toast.textContent = err.message || 'Failed to load repository';
+    toast.style.color = 'var(--error)';
+  }
+}
+
+// ─── Graph ────────────────────────────────────────────────────
+function initGraph() {
+  if (state.network) {
+    state.network.destroy();
+    state.network = null;
+  }
+  state.nodes = new vis.DataSet([]);
+  state.edges = new vis.DataSet([]);
+  state.visibleCatalogs = new Set();
+  state.dimmedNodes = new Set();
+  state.selectedNodeId = null;
+  detailPanel.classList.remove('open');
+  detailPanel.style.display = 'none';
+
+  const groups = {};
+  for (const [cat, color] of Object.entries(CATALOG_COLORS)) {
+    if (!state.loadedCatalogNames.includes(cat)) continue;
+    groups[cat] = {
+      shape: 'box',
+      color: { background: hexAlpha(color, 0.15), border: color },
+      borderWidth: 2,
+      borderWidthSelected: 3,
+      font: { size: 12, face: 'Segoe UI, sans-serif' },
+      shadow: { enabled: true },
+    };
+  }
+
+  const container = graphEl;
+  const options = {
+    groups,
+    nodes: {
+      font: { color: getComputedStyle(document.documentElement).getPropertyValue('--node-font').trim() },
+      margin: { top: 6, right: 10, bottom: 6, left: 10 },
+    },
+    edges: {
+      arrows: { to: { enabled: true, scaleFactor: 0.8 } },
+      width: 1.5,
+      smooth: { type: 'curvedCW', roundness: 0.1 },
+      font: { size: 0 },
+    },
+    physics: {
+      enabled: true,
+      barnesHut: {
+        gravitationalConstant: -6000,
+        centralGravity: 0.3,
+        springLength: 180,
+        springConstant: 0.03,
+        damping: 0.1,
+      },
+      stabilization: { iterations: 500, updateInterval: 50 },
+      maxVelocity: 30,
+    },
+    interaction: {
+      hover: true,
+      multiselect: false,
+      navigationButtons: false,
+      keyboard: false,
+    },
+    configure: { enabled: false },
+  };
+
+  state.network = new vis.Network(container, { nodes: state.nodes, edges: state.edges }, options);
+
+  state.network.on('click', function(params) {
+    if (params.nodes.length > 0) {
+      showDetail(params.nodes[0]);
+    } else {
+      closeDetail();
+    }
+  });
+
+  state.network.on('hoverNode', function(params) {
+    const connectedEdges = state.network.getConnectedEdges(params.node);
+    const connectedNodes = state.network.getConnectedNodes(params.node);
+    const allNodes = state.nodes.get().map(n => n.id);
+    const dim = allNodes.filter(id => id !== params.node && !connectedNodes.includes(id));
+    for (const id of dim) {
+      const cat = state.entryMap[id]?.catalog;
+      if (!cat) continue;
+      const color = CATALOG_COLORS[cat] || '#888';
+      state.nodes.update({ id, color: { background: hexAlpha(color, 0.04), border: hexAlpha(color, 0.3) } });
+    }
+    for (const id of connectedNodes) {
+      const cat = state.entryMap[id]?.catalog;
+      if (!cat) continue;
+      const color = CATALOG_COLORS[cat] || '#888';
+      state.nodes.update({ id, color: { background: hexAlpha(color, 0.3), border: color } });
+    }
+    // Highlight the hovered node
+    const hcat = state.entryMap[params.node]?.catalog;
+    if (hcat) {
+      const hcolor = CATALOG_COLORS[hcat] || '#888';
+      state.nodes.update({ id: params.node, color: { background: hexAlpha(hcolor, 0.4), border: hcolor } });
+    }
+  });
+
+  state.network.on('blurNode', function() {
+    updateNodeColors();
+  });
+
+  state.network.on('doubleClick', function(params) {
+    if (params.nodes.length > 0) {
+      state.network.focus(params.nodes[0], { scale: 1.5, animation: true });
+    }
+  });
+
+  emptyState.style.display = 'block';
+}
+
+function addCatalogToGraph(catalog) {
+  if (!state.entries[catalog]) return;
+  const catColor = CATALOG_COLORS[catalog] || '#888';
+  const batch = [];
+  for (const entry of state.entries[catalog]) {
+    batch.push({
+      id: entry.id,
+      label: entry.name,
+      group: catalog,
+      title: entry.name + ' \u2014 ' + toTitle(catalog),
+    });
+  }
+  state.nodes.add(batch);
+  state.visibleCatalogs.add(catalog);
+  resolveEdges();
+  emptyState.style.display = 'none';
+}
+
+function removeCatalogFromGraph(catalog) {
+  const ids = state.entries[catalog]?.map(e => e.id) || [];
+  const idSet = new Set(ids);
+  state.nodes.remove(ids);
+  const edgeIds = state.edges.get().filter(e => idSet.has(e.from) || idSet.has(e.to)).map(e => e.id);
+  state.edges.remove(edgeIds);
+  state.visibleCatalogs.delete(catalog);
+  if (state.visibleCatalogs.size === 0) emptyState.style.display = 'block';
+  if (state.selectedNodeId && idSet.has(state.selectedNodeId)) closeDetail();
+}
+
+function resolveEdges() {
+  const visibleIds = new Set(state.nodes.get().map(n => n.id));
+  const currentEdgeKeys = new Set(state.edges.get().map(e => e.from + '->' + e.to));
+  const toAdd = [];
+
+  for (const rel of (state.meta?.relationships || [])) {
+    const sourceEntries = state.entries[rel.source] || [];
+    const relColor = getRelColor(rel.description);
+
+    for (const entry of sourceEntries) {
+      if (!visibleIds.has(entry.id)) continue;
+      const refVal = entry[rel.viaField];
+      if (refVal == null) continue;
+      const targets = Array.isArray(refVal) ? refVal : [refVal];
+      for (const tid of targets) {
+        if (tid == null || tid === '') continue;
+        if (!visibleIds.has(tid)) continue;
+        const key = entry.id + '->' + tid;
+        if (currentEdgeKeys.has(key)) continue;
+        toAdd.push({
+          from: entry.id,
+          to: tid,
+          arrows: 'to',
+          title: rel.description,
+          color: { color: hexAlpha(relColor.color, 0.4), highlight: relColor.color },
+        });
+      }
+    }
+  }
+  if (toAdd.length) state.edges.add(toAdd);
+}
+
+function updateNodeColors() {
+  const searchActive = state.searchTerm.length > 0;
+  const visible = state.nodes.get();
+  for (const node of visible) {
+    const cat = state.entryMap[node.id]?.catalog;
+    if (!cat) continue;
+    const color = CATALOG_COLORS[cat] || '#888';
+    const isDimmed = state.dimmedNodes.has(node.id);
+    state.nodes.update({
+      id: node.id,
+      color: {
+        background: isDimmed ? hexAlpha(color, 0.03) : hexAlpha(color, 0.15),
+        border: isDimmed ? hexAlpha(color, 0.2) : color,
+      },
+    });
+  }
+  if (searchActive) {
+    const eVisible = state.edges.get();
+    for (const edge of eVisible) {
+      const sDim = state.dimmedNodes.has(edge.from);
+      const tDim = state.dimmedNodes.has(edge.to);
+      const rel = state.meta?.relationships.find(r => {
+        const src = state.entryMap[edge.from]?.catalog;
+        const tgt = state.entryMap[edge.to]?.catalog;
+        const srcMatch = src === r.source;
+        const tgtMatch = tgt === r.target;
+        return srcMatch && tgtMatch;
+      });
+      const relColor = rel ? getRelColor(rel.description) : { color: '#95a5a6' };
+      state.edges.update({
+        id: edge.id,
+        color: {
+          color: sDim || tDim ? hexAlpha(relColor.color, 0.06) : hexAlpha(relColor.color, 0.4),
+          highlight: sDim || tDim ? hexAlpha(relColor.color, 0.06) : relColor.color,
+        },
+      });
+    }
+  }
+}
+
+// ─── Detail Panel ─────────────────────────────────────────────
+function showDetail(nodeId) {
+  const data = state.entryMap[nodeId];
+  if (!data) return;
+  state.selectedNodeId = nodeId;
+  const { entry, catalog } = data;
+  const title = entry.name + ' \u2014 ' + toTitle(catalog);
+  dpTitle.textContent = title;
+
+  let html = '<div class="dp-section"><h3>Fields</h3>';
+  for (const [key, val] of Object.entries(entry)) {
+    if (val == null || (Array.isArray(val) && val.length === 0)) continue;
+    const label = formatFieldName(key);
+    const targetCat = FIELD_REFMAP[key];
+    let displayVal;
+    if (targetCat && val && typeof val === 'string') {
+      const ref = state.entryMap[val];
+      if (ref) {
+        const isVisible = state.visibleCatalogs.has(ref.catalog);
+        if (isVisible) {
+          displayVal = `<a class="ref-link" data-id="${val}">${ref.entry.name} <span style="color:var(--text-muted);font-size:11px">(${toTitle(ref.catalog)})</span></a>`;
+        } else {
+          displayVal = `<span class="dimmed">${ref.entry.name} (${toTitle(ref.catalog)}) <span style="font-size:11px">\u2014 select catalog</span></span>`;
+        }
+      } else {
+        displayVal = `<span style="color:var(--text-muted)">${val}</span>`;
+      }
+    } else if (targetCat && Array.isArray(val) && val.length > 0) {
+      const parts = val.map(v => {
+        const ref = state.entryMap[v];
+        if (ref) {
+          const isVisible = state.visibleCatalogs.has(ref.catalog);
+          return isVisible
+            ? `<a class="ref-link" data-id="${v}">${ref.entry.name}</a>`
+            : `<span class="dimmed">${ref.entry.name}</span>`;
+        }
+        return `<span style="color:var(--text-muted)">${v}</span>`;
+      });
+      displayVal = parts.join(', ');
+    } else if (typeof val === 'boolean') {
+      displayVal = val ? '\u2705' : '\u274C';
+    } else {
+      displayVal = String(val);
+    }
+    html += `<div class="dp-field"><span class="dp-label">${label}</span><span class="dp-value">${displayVal}</span></div>`;
+  }
+  html += '</div>';
+
+  // Relationships section
+  const allEdges = state.edges.get();
+  const outbound = allEdges.filter(e => e.from === nodeId);
+  const inbound = allEdges.filter(e => e.to === nodeId);
+  html += '<div class="dp-section"><h3>Relationships</h3>';
+  if (outbound.length === 0 && inbound.length === 0) {
+    html += '<div class="empty">No relationships for this node</div>';
+  } else {
+    if (outbound.length) {
+      html += '<div style="margin-bottom:6px"><strong style="font-size:12px;color:var(--text-secondary)">Outbound</strong></div>';
+      for (const edge of outbound) {
+        const target = state.entryMap[edge.to];
+        if (!target) continue;
+        html += `<div class="dp-rel"><span class="arrow">\u2192</span><span class="rel-target" data-id="${edge.to}">${target.entry.name}</span><span class="rel-desc">${edge.title}</span></div>`;
+      }
+    }
+    if (inbound.length) {
+      html += '<div style="margin:6px 0 4px"><strong style="font-size:12px;color:var(--text-secondary)">Inbound</strong></div>';
+      for (const edge of inbound) {
+        const source = state.entryMap[edge.from];
+        if (!source) continue;
+        html += `<div class="dp-rel"><span class="arrow">\u2190</span><span class="rel-target" data-id="${edge.from}">${source.entry.name}</span><span class="rel-desc">${edge.title}</span></div>`;
+      }
+    }
+  }
+  html += '</div>';
+
+  dpBody.innerHTML = html;
+  detailPanel.style.display = 'block';
+  detailPanel.classList.add('open');
+
+  // Attach click handlers for reference links
+  dpBody.querySelectorAll('.ref-link').forEach(el => {
+    el.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const id = this.dataset.id;
+      if (state.nodes.get(id)) {
+        state.network.selectNodes([id]);
+        state.network.focus(id, { scale: 1.5, animation: true });
+        showDetail(id);
+      }
+    });
+  });
+  dpBody.querySelectorAll('.rel-target').forEach(el => {
+    el.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const id = this.dataset.id;
+      if (state.nodes.get(id)) {
+        state.network.selectNodes([id]);
+        state.network.focus(id, { scale: 1.5, animation: true });
+        showDetail(id);
+      }
+    });
+  });
+}
+
+function closeDetail() {
+  detailPanel.classList.remove('open');
+  detailPanel.style.display = 'none';
+  state.selectedNodeId = null;
+}
+
+dpClose.addEventListener('click', closeDetail);
+
+// ─── Search / Filter ──────────────────────────────────────────
+let searchTimer = null;
+searchInput.addEventListener('input', function() {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    const term = this.value.trim().toLowerCase();
+    state.searchTerm = term;
+    state.dimmedNodes.clear();
+
+    if (term.length === 0) {
+      // Restore all nodes
+      updateNodeColors();
+      return;
+    }
+
+    const visible = state.nodes.get();
+    for (const node of visible) {
+      const data = state.entryMap[node.id];
+      if (!data) continue;
+      const name = (data.entry.name || '').toLowerCase();
+      const desc = (data.entry.description || '').toLowerCase();
+      if (!name.includes(term) && !desc.includes(term)) {
+        state.dimmedNodes.add(node.id);
+      }
+    }
+    updateNodeColors();
+  }, 150);
+});
+
+// ─── Sidebar rendering ───────────────────────────────────────
+function renderSidebar() {
+  // Catalog checkboxes
+  let catHtml = '';
+  for (const cat of state.loadedCatalogNames) {
+    const color = CATALOG_COLORS[cat] || '#888';
+    const count = state.entries[cat]?.length || 0;
+    catHtml += `<label class="cat-item"><input type="checkbox" data-catalog="${cat}"><span class="cat-swatch" style="background:${color}"></span><span class="cat-name">${cat}</span><span class="cat-count">${count}</span></label>`;
+  }
+  catalogList.innerHTML = catHtml;
+
+  // Checkbox events
+  catalogList.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', function() {
+      const cat = this.dataset.catalog;
+      if (this.checked) {
+        addCatalogToGraph(cat);
+      } else {
+        removeCatalogFromGraph(cat);
+      }
+    });
+  });
+
+  // Select All / Deselect All
+  selectAllBtn.addEventListener('click', function(e) {
+    e.preventDefault();
+    for (const cb of catalogList.querySelectorAll('input[type="checkbox"]')) {
+      if (!cb.checked) {
+        cb.checked = true;
+        addCatalogToGraph(cb.dataset.catalog);
+      }
+    }
+  });
+
+  deselectAllBtn.addEventListener('click', function(e) {
+    e.preventDefault();
+    for (const cb of catalogList.querySelectorAll('input[type="checkbox"]')) {
+      if (cb.checked) {
+        cb.checked = false;
+        removeCatalogFromGraph(cb.dataset.catalog);
+      }
+    }
+  });
+
+  // Legend
+  let lgdHtml = '';
+  for (const cat of state.loadedCatalogNames) {
+    const color = CATALOG_COLORS[cat] || '#888';
+    const count = state.entries[cat]?.length || 0;
+    lgdHtml += `<div class="lgd-item"><span class="lgd-swatch" style="background:${color}"></span><span class="lgd-name">${cat}</span><span class="lgd-count">${count}</span></div>`;
+  }
+  legend.innerHTML = lgdHtml || '<div class="empty-catalogs">No catalogs loaded</div>';
+}
+
+// ─── Events ───────────────────────────────────────────────────
+openBtn.addEventListener('click', loadRepository);
+</script>
+</body>
+</html>
