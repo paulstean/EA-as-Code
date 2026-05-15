@@ -180,12 +180,12 @@ Error scenarios to handle:
 | Width | Auto-sized to label text (vis-network default) |
 | Background | Catalog colour, 15% opacity fill |
 | Border | Catalog colour, full opacity, 2px width |
-| Font | `{ color: var(--text-primary), size: 12, face: 'Segoe UI, sans-serif' }` |
+| Font | `{ color: var(--text-primary), size: 11, face: 'Segoe UI, sans-serif' }` |
 | Shadow | Enabled with slight blur |
+| Margin | `{ top: 6, right: 10, bottom: 6, left: 10 }` |
 
 - Each node's `id` is the entry's `id` field
-- Each node's `label` is the entry's `name` field
-- Each node has `title` set to a concise hover tooltip string: *"{name} — {catalogType}"*
+- Each node's `label` is a two-line string: *"[catalogType]\nentryName"* (catalog name in square brackets on the first line, entry name on the second)
 - Full entry data is stored in a separate `Map<nodeId, entryObject>` lookup table, not on the vis-network node. On click, the detail panel retrieves the entry by node ID from this map
 - Each vis-network node stores its catalog type in a custom `group` property for programmematic filtering
 
