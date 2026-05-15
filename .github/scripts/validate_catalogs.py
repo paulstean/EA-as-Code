@@ -13,17 +13,17 @@ METAMODEL_PATH = os.path.join(ROOT, "metamodel.json")
 PASS = "PASS"
 FAIL = "FAIL"
 
-results = {}  # section_name -> (status, count)
+results = {}  # section_name -> (status, errors_count, tests_count)
 
 
 def section(name):
     print(f"\n── {name} ─────────────────────────────────────────────")
 
-def end_section(name, errors):
+def end_section(name, errors, tests):
     if errors:
-        results[name] = (FAIL, len(errors))
+        results[name] = (FAIL, len(errors), tests)
     else:
-        results[name] = (PASS, 0)
+        results[name] = (PASS, 0, tests)
 
 
 def load_json(path, label):
@@ -85,29 +85,33 @@ def check_field_type(value, expected, field, eid):
 section("JSON Syntax")
 
 json_errors = []
+json_count = 0
 for cname in sorted(entity_by_catalog):
     fp = os.path.join(CATALOGS_DIR, cname, f"{cname}.json")
     mp = os.path.join(CATALOGS_DIR, cname, f"{cname}-Meta.json")
     for path, label in [(fp, f"{cname}.json"), (mp, f"{cname}-Meta.json")]:
         if os.path.exists(path):
+            json_count += 1
             try:
                 json.load(open(path))
             except json.JSONDecodeError as ex:
                 print(f"  ERROR: {label}: {ex}")
                 json_errors.append(label)
 
-end_section("JSON Syntax", json_errors)
+end_section("JSON Syntax", json_errors, json_count)
 
 # ── 2. Meta File Structure ──────────────────────────────────────
 section("Meta File Structure")
 
 meta_errors = []
+meta_count = 0
 for cname in sorted(entity_by_catalog):
     mp = os.path.join(CATALOGS_DIR, cname, f"{cname}-Meta.json")
     meta = load_json(mp, f"{cname}-Meta.json")
     if meta is None:
         meta_errors.append(cname)
         continue
+    meta_count += 1
     if "fields" not in meta:
         print(f"  ERROR: {cname}-Meta.json: missing 'fields' key")
         meta_errors.append(cname)
@@ -115,12 +119,13 @@ for cname in sorted(entity_by_catalog):
         print(f"  ERROR: {cname}-Meta.json: missing 'catalogName' key")
         meta_errors.append(cname)
 
-end_section("Meta File Structure", meta_errors)
+end_section("Meta File Structure", meta_errors, meta_count)
 
 # ── 3. Metamodel Conformance ────────────────────────────────────
 section("Metamodel Conformance")
 
 mm_errors = []
+mm_count = 0
 for cname in sorted(entity_by_catalog):
     fp = os.path.join(CATALOGS_DIR, cname, f"{cname}.json")
     entries = load_json(fp, f"{cname}.json")
@@ -144,6 +149,7 @@ for cname in sorted(entity_by_catalog):
             mm_errors.append(cname)
             continue
 
+        mm_count += 1
         eid = entry.get("id", f"<no-id-in-{cname}>")
 
         for fn, fd in fdefs.items():
@@ -161,12 +167,13 @@ for cname in sorted(entity_by_catalog):
                 if not check_field_type(val, fdefs[fn]["type"], fn, eid):
                     mm_errors.append(eid)
 
-end_section("Metamodel Conformance", mm_errors)
+end_section("Metamodel Conformance", mm_errors, mm_count)
 
 # ── 4. ID Prefix Convention ────────────────────────────────────
 section("ID Prefix Convention")
 
 id_errors = []
+id_count = 0
 for cname in sorted(entity_by_catalog):
     fp = os.path.join(CATALOGS_DIR, cname, f"{cname}.json")
     entries = load_json(fp, f"{cname}.json")
@@ -178,17 +185,19 @@ for cname in sorted(entity_by_catalog):
         continue
 
     for entry in entries:
+        id_count += 1
         eid = entry.get("id", "")
         if not str(eid).startswith(expected_prefix):
             print(f"  ERROR: {eid}: ID does not start with expected prefix '{expected_prefix}'")
             id_errors.append(eid)
 
-end_section("ID Prefix Convention", id_errors)
+end_section("ID Prefix Convention", id_errors, id_count)
 
 # ── 5. Cardinality ──────────────────────────────────────────────
 section("Cardinality")
 
 card_errors = []
+card_count = 0
 for cname in sorted(entity_by_catalog):
     entity = entity_by_catalog.get(cname)
     if entity is None:
@@ -212,6 +221,7 @@ for cname in sorted(entity_by_catalog):
         for fn, card in card_map.items():
             if fn not in entry:
                 continue
+            card_count += 1
             wanted = CARD_TYPE.get(card)
             if wanted == "array" and not isinstance(entry[fn], list):
                 print(f"  ERROR: {eid}: field '{fn}' has cardinality {card} but is not an array")
@@ -220,12 +230,13 @@ for cname in sorted(entity_by_catalog):
                 print(f"  ERROR: {eid}: field '{fn}' has cardinality {card} but is an array")
                 card_errors.append(eid)
 
-end_section("Cardinality", card_errors)
+end_section("Cardinality", card_errors, card_count)
 
 # ── 6. Enum Values ──────────────────────────────────────────────
 section("Enum Values")
 
 enum_errors = []
+enum_count = 0
 for cname in sorted(entity_by_catalog):
     entity = entity_by_catalog.get(cname)
     if entity is None:
@@ -242,6 +253,7 @@ for cname in sorted(entity_by_catalog):
         if entity["name"] == "TechnologyStandard":
             val = entry.get("status")
             if val is not None:
+                enum_count += 1
                 edef = ENUMS.get("TechnologyStandardStatus")
                 if edef and val not in edef["values"]:
                     print(f"  ERROR: {eid}: status '{val}' invalid — allowed: {edef['values']}")
@@ -250,6 +262,7 @@ for cname in sorted(entity_by_catalog):
         if entity["name"] == "InfrastructureComponent":
             val = entry.get("type")
             if val is not None:
+                enum_count += 1
                 edef = ENUMS.get("InfrastructureComponentType")
                 if edef and val not in edef["values"]:
                     print(f"  ERROR: {eid}: type '{val}' invalid — allowed: {edef['values']}")
@@ -258,12 +271,13 @@ for cname in sorted(entity_by_catalog):
         if entity["name"] == "Permission":
             val = entry.get("accessLevel")
             if val is not None:
+                enum_count += 1
                 edef = ENUMS.get("PermissionAccessLevel")
                 if edef and val not in edef["values"]:
                     print(f"  ERROR: {eid}: accessLevel '{val}' invalid — allowed: {edef['values']}")
                     enum_errors.append(eid)
 
-end_section("Enum Values", enum_errors)
+end_section("Enum Values", enum_errors, enum_count)
 
 # ── 7. Cross-References ─────────────────────────────────────────
 section("Cross-References")
@@ -280,8 +294,11 @@ for cname in sorted(entity_by_catalog):
                 all_by_id[eid] = (cname, ent)
 
 xref_errors = []
+xref_count = 0
 
 def check_ref(val, field, source_id):
+    global xref_count
+    xref_count += 1
     if val is None or val == "":
         return
     if val not in all_by_id:
@@ -310,23 +327,28 @@ for cname in sorted(entity_by_catalog):
                     else:
                         check_ref(val, field, eid)
 
-end_section("Cross-References", xref_errors)
+end_section("Cross-References", xref_errors, xref_count)
 
 # ── Final Summary ───────────────────────────────────────────────
 print()
-print("=" * 60)
-print(f"  {'SUITE':<30} {'RESULT':<8}  ERRORS")
-print(f"  {'─'*30} {'─'*8}  ─────")
+print("=" * 70)
+print(f"  {'SUITE':<30} {'RESULT':<8} {'TESTS':<8} ERRORS")
+print(f"  {'─'*30} {'─'*8} {'─'*8} ─────")
 
 total_fail = 0
+total_tests = 0
+total_errors = 0
 for name in ["JSON Syntax", "Meta File Structure", "Metamodel Conformance",
              "ID Prefix Convention", "Cardinality", "Enum Values", "Cross-References"]:
-    status, count = results.get(name, (PASS, 0))
+    status, err_count, test_count = results.get(name, (PASS, 0, 0))
+    total_tests += test_count
+    total_errors += err_count
     if status == FAIL:
         total_fail += 1
-    print(f"  {name:<30} {status:<8}  {count}")
+    print(f"  {name:<30} {status:<8} {test_count:<8} {err_count}")
 
 print()
+print(f"  Total: {total_tests} tests, {total_errors} errors")
 if total_fail:
     print(f"  ❌  {total_fail} of {len(results)} suites FAILED")
     sys.exit(1)
