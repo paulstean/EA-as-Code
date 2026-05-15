@@ -26,8 +26,10 @@ Aligned to **TOGAF** conventions. Aimed at **governance and clarity**, not infra
 ├── rules/
 │   └── *.md                    # Governance skill files (auto-discovered)
 └── .github/
-    └── workflows/
-        └── pr-review.yml       # CI pipeline
+    ├── workflows/
+    │   └── validate.yml        # CI: validates JSON, schema, cardinality, refs
+    └── scripts/
+        └── validate_catalogs.py
 ```
 
 Each catalog directory contains:
@@ -64,55 +66,37 @@ The seed data models a mid-size **Electrical Distribution Utility** using Azure,
    - What is changing and why
    - The project or initiative driving the change
    - Expected business benefits
-4. **Review** — The CI pipeline runs automatically:
-   - **Stage 1** — Structural validation (JSON is well-formed, matches schema)
-   - **Stage 2** — Diff analysis (counts additions/modifications/removals per catalog)
-   - **Stage 3** — AI agent reads all `rules/*.md` files and evaluates the PR against each rule
-   - **Stage 4** — A summary comment is posted on the PR
+ 4. **Review** — The CI pipeline runs automatically:
+    - **Stage 1** — Structural validation (JSON is well-formed, matches schema)
+    - **Stage 2** — Cross-reference and cardinality checks (no orphaned IDs, correct types)
+    - **Stage 3** — Enum validation (status, type, accessLevel values are valid)
+    - **Stage 4** — Diff analysis (changes are summarised in the PR)
 5. **Merge** — The architecture team reviews and merges to `main`
 
 ---
 
-## Setting Up the GitHub Agent (CI Pipeline)
+## Setting Up CI
 
 ### Prerequisites
 
 - A GitHub repository with this content pushed
-- A GitHub Copilot for Business or Copilot Enterprise license (required for the `github/copilot-code-review` action)
 
-### Step 1: Enable Copilot Code Review
-
-The workflow uses the `github/copilot-code-review@v2` action. This requires:
-
-1. Navigate to your repository **Settings → Actions → General**
-2. Scroll to **Workflow permissions** and select **Read and write permissions**
-3. Under **Actions → Copilot**, ensure **Allow Copilot code review** is enabled
-
-### Step 2: Verify `GITHUB_TOKEN` Permissions
-
-The workflow declares these permissions in the workflow file itself:
-
-```yaml
-permissions:
-  contents: read
-  pull-requests: write
-```
-
-The `GITHUB_TOKEN` secret is automatically provided by GitHub Actions — no manual setup required.
-
-### Step 3: Push to GitHub
+### Step 1: Push to GitHub
 
 ```bash
 git remote add origin <your-repo-url>
 git push -u origin main
 ```
 
-### Step 4: Open a Test PR
+### Step 2: Open a Test PR
 
-Create a branch, make a change to any catalog JSON file, and open a pull request. The workflow should trigger automatically and you'll see:
+Create a branch, make a change to any catalog JSON file, and open a pull request. The workflow triggers automatically and runs structural validation against all catalogs.
 
-1. A check running called **EA Architecture Review**
-2. A PR comment posted with the change summary and rule assessment
+To run validation locally before pushing:
+
+```bash
+python3 .github/scripts/validate_catalogs.py
+```
 
 ---
 
@@ -188,8 +172,7 @@ satisfy this constraint.
 2. Add `<CatalogName>.json` with an array of entries
 3. Add `<CatalogName>-Meta.json` with field definitions and relationships
 4. Update `metamodel.json` to add the new entity type
-5. Update the CI workflow's `catalogs` list in `.github/workflows/pr-review.yml`
-6. Optionally add seed data and skill file rules
+5. Optionally add seed data and skill file rules
 
 ---
 
@@ -198,6 +181,5 @@ satisfy this constraint.
 | Phase | Description |
 |---|---|
 | **Natural Language Query** | Ask plain-English questions about the architecture |
-| **Azure DevOps Port** | Port CI from GitHub Actions to Azure DevOps pipelines |
 | **Impact Analysis** | Automated assessment of what else a change affects |
 | **Change Approval Workflow** | Formal gates, scheduling, change advisory board routing |

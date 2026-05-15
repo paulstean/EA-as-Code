@@ -16,6 +16,9 @@ catalogs/<Catalog>/
   <Catalog>.json            # Array of entries
   <Catalog>-Meta.json       # Schema, field defs, relationships
 rules/*.md                  # Governance skill files
+.github/
+  workflows/validate.yml    # CI: runs on push/PR to main
+  scripts/validate_catalogs.py  # Validates JSON, meta, metamodel, cardinality, refs
 ```
 
 ## 11 Catalogs (v1)
@@ -49,7 +52,6 @@ rules/*.md                  # Governance skill files
 1. Create `catalogs/<NewCatalog>/<NewCatalog>.json`
 2. Create `catalogs/<NewCatalog>/<NewCatalog>-Meta.json`
 3. Add the entity type and relationships to `metamodel.json`
-4. Update the `catalogs` list in `.github/workflows/pr-review.yml`
 
 ### Add Skill File
 
@@ -71,10 +73,9 @@ rules/*.md                  # Governance skill files
 
 ## Before Committing
 
-1. Run JSON validation: `python3 -m json.tool <file>` on changed JSON files
-2. Verify all cross-references resolve (see verify_refs.py script)
-3. Write descriptive commit messages following conventional commits: `feat:`, `fix:`, `docs:`, `rule:`, `chore:`
+1. Run the validation script: `python3 .github/scripts/validate_catalogs.py`
+2. Write descriptive commit messages following conventional commits: `feat:`, `fix:`, `docs:`, `rule:`, `chore:`
 
 ## Verification
 
-A verification script exists at `/tmp/verify_refs.py` that checks all cross-references across all 11 catalogs. Run it before committing to ensure no orphaned IDs.
+A validation script at `.github/scripts/validate_catalogs.py` checks all 11 catalogs for JSON validity, schema conformance against meta files and `metamodel.json`, cardinality rules, enum values, and cross-reference resolution. Run it before committing to ensure zero errors.

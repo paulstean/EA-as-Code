@@ -1,0 +1,22 @@
+name: Validate Catalogs
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run catalog validation
+        run: python3 .github/scripts/validate_catalogs.py
+      - name: Check JSON validity of all catalog files
+        run: |
+          find catalogs -name '*.json' -exec sh -c '
+            for f do
+              python3 -m json.tool "$f" > /dev/null || exit 1
+            done
+          ' sh {} +
