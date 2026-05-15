@@ -43,5 +43,10 @@
     "id": "bug-009",
     "name": "Executive Leadership",
     "description": "CEO, CFO, COO, and other C-suite leaders requiring strategic-level access."
+  },
+  {
+    "id": "bug-010",
+    "name": "External AI Consultancy",
+    "description": "Data science and AI team responsible for developing machine learning models and analytics on the Azure Databricks platform for the ERT project."
   }
 ]
