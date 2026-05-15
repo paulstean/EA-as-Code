@@ -67,15 +67,6 @@ header h1{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px
 #openBtn.error:hover{background:var(--error);color:#fff}
 #toast{font-size:12px;margin-top:6px;min-height:18px}
 
-/* Catalog list */
-#catalogList{display:flex;flex-direction:column;gap:2px;max-height:300px;overflow-y:auto}
-.cat-item{display:flex;align-items:center;gap:8px;padding:4px 6px;border-radius:4px;cursor:pointer;font-size:13px;transition:background 0.1s}
-.cat-item:hover{background:var(--hover-highlight)}
-.cat-item input[type="checkbox"]{accent-color:var(--accent);cursor:pointer;flex-shrink:0}
-.cat-swatch{width:12px;height:12px;border-radius:3px;flex-shrink:0;border:1px solid rgba(255,255,255,0.15)}
-.cat-name{flex:1;color:var(--text-primary)}
-.cat-count{font-size:11px;color:var(--text-muted)}
-
 /* Select / Deselect all */
 #selectAllBar{display:flex;gap:12px;padding:4px 14px 8px}
 #selectAllBar a{font-size:12px;color:var(--accent);cursor:pointer;text-decoration:none}
@@ -86,6 +77,25 @@ header h1{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px
 #searchInput{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg-primary);color:var(--text-primary);font-size:13px;outline:none;transition:border 0.15s}
 #searchInput:focus{border-color:var(--accent)}
 #searchInput::placeholder{color:var(--text-muted)}
+
+/* Catalog groups */
+#catalogList{display:flex;flex-direction:column;gap:2px}
+.cat-group{border:1px solid var(--border);border-radius:6px;overflow:hidden}
+.cat-header{display:flex;align-items:center;gap:6px;padding:6px 8px;cursor:pointer;font-size:13px;user-select:none;transition:background 0.1s}
+.cat-header:hover{background:var(--hover-highlight)}
+.cat-toggle{font-size:10px;color:var(--text-muted);width:14px;text-align:center;flex-shrink:0;transition:transform 0.15s}
+.cat-toggle.open{transform:rotate(90deg)}
+.cat-swatch{width:10px;height:10px;border-radius:3px;flex-shrink:0;border:1px solid rgba(255,255,255,0.15)}
+.cat-name{flex:1;font-weight:500;color:var(--text-primary)}
+.cat-count{font-size:11px;color:var(--text-muted);white-space:nowrap}
+.cat-master{accent-color:var(--accent);cursor:pointer;flex-shrink:0}
+.cat-entries{display:none;border-top:1px solid var(--border);padding:2px 0;max-height:200px;overflow-y:auto}
+.cat-entries.open{display:block}
+.entry-item{display:flex;align-items:center;gap:6px;padding:3px 8px 3px 28px;font-size:12px;cursor:pointer;transition:background 0.1s}
+.entry-item:hover{background:var(--hover-highlight)}
+.entry-item input[type="checkbox"]{accent-color:var(--accent);cursor:pointer;flex-shrink:0}
+.entry-name{color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.entry-id{color:var(--text-muted);font-size:10px;font-family:monospace;flex-shrink:0}
 
 /* Legend */
 #legend{display:flex;flex-direction:column;gap:3px}
@@ -241,7 +251,8 @@ const state = {
   nodes: null,
   edges: null,
   network: null,
-  visibleCatalogs: new Set(),
+  visibleEntries: new Set(),
+  expandedCatalogs: new Set(),
   dimmedNodes: new Set(),
   selectedNodeId: null,
   isLoading: false,
@@ -401,7 +412,8 @@ function initGraph() {
   }
   state.nodes = new vis.DataSet([]);
   state.edges = new vis.DataSet([]);
-  state.visibleCatalogs = new Set();
+  state.visibleEntries = new Set();
+  state.expandedCatalogs = new Set();
   state.dimmedNodes = new Set();
   state.selectedNodeId = null;
   detailPanel.classList.remove('open');
@@ -502,32 +514,59 @@ function initGraph() {
   emptyState.style.display = 'block';
 }
 
-function addCatalogToGraph(catalog) {
-  if (!state.entries[catalog]) return;
-  const catColor = CATALOG_COLORS[catalog] || '#888';
+function addEntryToGraph(entryId) {
+  if (state.nodes.get(entryId)) return;
+  const data = state.entryMap[entryId];
+  if (!data) return;
+  const { entry, catalog } = data;
+  state.nodes.add({
+    id: entry.id,
+    label: entry.name,
+    group: catalog,
+    title: entry.name + ' \u2014 ' + toTitle(catalog),
+  });
+  state.visibleEntries.add(entryId);
+  resolveEdges();
+  emptyState.style.display = 'none';
+}
+
+function removeEntryFromGraph(entryId) {
+  state.nodes.remove(entryId);
+  const edgeIds = state.edges.get().filter(e => e.from === entryId || e.to === entryId).map(e => e.id);
+  state.edges.remove(edgeIds);
+  state.visibleEntries.delete(entryId);
+  if (state.visibleEntries.size === 0) emptyState.style.display = 'block';
+  if (state.selectedNodeId === entryId) closeDetail();
+}
+
+function addCatalogAllToGraph(catalog) {
+  const entries = state.entries[catalog] || [];
+  const ids = entries.map(e => e.id).filter(id => !state.nodes.get(id));
   const batch = [];
-  for (const entry of state.entries[catalog]) {
+  for (const entry of entries) {
+    if (state.nodes.get(entry.id)) continue;
     batch.push({
       id: entry.id,
       label: entry.name,
       group: catalog,
       title: entry.name + ' \u2014 ' + toTitle(catalog),
     });
+    state.visibleEntries.add(entry.id);
   }
+  if (batch.length === 0) return;
   state.nodes.add(batch);
-  state.visibleCatalogs.add(catalog);
   resolveEdges();
   emptyState.style.display = 'none';
 }
 
-function removeCatalogFromGraph(catalog) {
+function removeCatalogAllFromGraph(catalog) {
   const ids = state.entries[catalog]?.map(e => e.id) || [];
   const idSet = new Set(ids);
   state.nodes.remove(ids);
   const edgeIds = state.edges.get().filter(e => idSet.has(e.from) || idSet.has(e.to)).map(e => e.id);
   state.edges.remove(edgeIds);
-  state.visibleCatalogs.delete(catalog);
-  if (state.visibleCatalogs.size === 0) emptyState.style.display = 'block';
+  for (const id of ids) state.visibleEntries.delete(id);
+  if (state.visibleEntries.size === 0) emptyState.style.display = 'block';
   if (state.selectedNodeId && idSet.has(state.selectedNodeId)) closeDetail();
 }
 
@@ -621,7 +660,7 @@ function showDetail(nodeId) {
     if (targetCat && val && typeof val === 'string') {
       const ref = state.entryMap[val];
       if (ref) {
-        const isVisible = state.visibleCatalogs.has(ref.catalog);
+        const isVisible = state.visibleEntries.has(val);
         if (isVisible) {
           displayVal = `<a class="ref-link" data-id="${val}">${ref.entry.name} <span style="color:var(--text-muted);font-size:11px">(${toTitle(ref.catalog)})</span></a>`;
         } else {
@@ -634,7 +673,7 @@ function showDetail(nodeId) {
       const parts = val.map(v => {
         const ref = state.entryMap[v];
         if (ref) {
-          const isVisible = state.visibleCatalogs.has(ref.catalog);
+          const isVisible = state.visibleEntries.has(v);
           return isVisible
             ? `<a class="ref-link" data-id="${v}">${ref.entry.name}</a>`
             : `<span class="dimmed">${ref.entry.name}</span>`;
@@ -746,45 +785,116 @@ searchInput.addEventListener('input', function() {
 
 // ─── Sidebar rendering ───────────────────────────────────────
 function renderSidebar() {
-  // Catalog checkboxes
   let catHtml = '';
   for (const cat of state.loadedCatalogNames) {
     const color = CATALOG_COLORS[cat] || '#888';
-    const count = state.entries[cat]?.length || 0;
-    catHtml += `<label class="cat-item"><input type="checkbox" data-catalog="${cat}"><span class="cat-swatch" style="background:${color}"></span><span class="cat-name">${cat}</span><span class="cat-count">${count}</span></label>`;
-  }
-  catalogList.innerHTML = catHtml;
+    const entries = state.entries[cat] || [];
+    const total = entries.length;
+    const selected = entries.filter(e => state.visibleEntries.has(e.id)).length;
+    const isExpanded = state.expandedCatalogs.has(cat);
 
-  // Checkbox events
-  catalogList.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-    cb.addEventListener('change', function() {
-      const cat = this.dataset.catalog;
-      if (this.checked) {
-        addCatalogToGraph(cat);
+    catHtml += `<div class="cat-group" data-catalog="${cat}">`;
+    catHtml += `<div class="cat-header">`;
+    catHtml += `<span class="cat-toggle ${isExpanded ? 'open' : ''}">&#x25B6;</span>`;
+    catHtml += `<input type="checkbox" class="cat-master" ${selected === total && total > 0 ? 'checked' : ''}>`;
+    catHtml += `<span class="cat-swatch" style="background:${color}"></span>`;
+    catHtml += `<span class="cat-name">${cat}</span>`;
+    catHtml += `<span class="cat-count">${selected}/${total}</span>`;
+    catHtml += `</div>`;
+    catHtml += `<div class="cat-entries ${isExpanded ? 'open' : ''}">`;
+
+    for (const entry of entries) {
+      const checked = state.visibleEntries.has(entry.id) ? 'checked' : '';
+      catHtml += `<label class="entry-item">`;
+      catHtml += `<input type="checkbox" data-id="${entry.id}" ${checked}>`;
+      catHtml += `<span class="entry-name">${entry.name}</span>`;
+      catHtml += `<span class="entry-id">${entry.id}</span>`;
+      catHtml += `</label>`;
+    }
+    catHtml += `</div></div>`;
+  }
+  catalogList.innerHTML = catHtml || '<div class="empty-catalogs">Open a repository first</div>';
+
+  // Header click → toggle expand
+  catalogList.querySelectorAll('.cat-header').forEach(hdr => {
+    hdr.addEventListener('click', function(e) {
+      // Don't toggle if clicking the master checkbox
+      if (e.target.type === 'checkbox') return;
+      const group = this.closest('.cat-group');
+      const cat = group.dataset.catalog;
+      const entriesDiv = group.querySelector('.cat-entries');
+      const toggle = group.querySelector('.cat-toggle');
+      entriesDiv.classList.toggle('open');
+      toggle.classList.toggle('open');
+      if (entriesDiv.classList.contains('open')) {
+        state.expandedCatalogs.add(cat);
       } else {
-        removeCatalogFromGraph(cat);
+        state.expandedCatalogs.delete(cat);
       }
+    });
+  });
+
+  // Master checkbox → select/deselect all entries in catalog
+  catalogList.querySelectorAll('.cat-master').forEach(cb => {
+    cb.addEventListener('change', function() {
+      const group = this.closest('.cat-group');
+      const cat = group.dataset.catalog;
+      const entryCbs = group.querySelectorAll('.entry-item input[type="checkbox"]');
+      if (this.checked) {
+        addCatalogAllToGraph(cat);
+        entryCbs.forEach(c => c.checked = true);
+      } else {
+        removeCatalogAllFromGraph(cat);
+        entryCbs.forEach(c => c.checked = false);
+      }
+      // Update count
+      const entries = state.entries[cat] || [];
+      const selected = entries.filter(e => state.visibleEntries.has(e.id)).length;
+      group.querySelector('.cat-count').textContent = selected + '/' + entries.length;
+    });
+  });
+
+  // Entry checkbox → add/remove single entry
+  catalogList.querySelectorAll('.entry-item input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', function() {
+      const id = this.dataset.id;
+      const group = this.closest('.cat-group');
+      const cat = group.dataset.catalog;
+      if (this.checked) {
+        addEntryToGraph(id);
+      } else {
+        removeEntryFromGraph(id);
+      }
+      // Update master checkbox and count
+      const entries = state.entries[cat] || [];
+      const total = entries.length;
+      const selected = entries.filter(e => state.visibleEntries.has(e.id)).length;
+      group.querySelector('.cat-count').textContent = selected + '/' + total;
+      group.querySelector('.cat-master').checked = selected === total && total > 0;
     });
   });
 
   // Select All / Deselect All
   selectAllBtn.addEventListener('click', function(e) {
     e.preventDefault();
-    for (const cb of catalogList.querySelectorAll('input[type="checkbox"]')) {
-      if (!cb.checked) {
-        cb.checked = true;
-        addCatalogToGraph(cb.dataset.catalog);
-      }
+    for (const group of catalogList.querySelectorAll('.cat-group')) {
+      const cat = group.dataset.catalog;
+      addCatalogAllToGraph(cat);
+      group.querySelectorAll('.entry-item input[type="checkbox"]').forEach(c => c.checked = true);
+      group.querySelector('.cat-master').checked = true;
+      const entries = state.entries[cat] || [];
+      group.querySelector('.cat-count').textContent = entries.length + '/' + entries.length;
     }
   });
 
   deselectAllBtn.addEventListener('click', function(e) {
     e.preventDefault();
-    for (const cb of catalogList.querySelectorAll('input[type="checkbox"]')) {
-      if (cb.checked) {
-        cb.checked = false;
-        removeCatalogFromGraph(cb.dataset.catalog);
-      }
+    for (const group of catalogList.querySelectorAll('.cat-group')) {
+      const cat = group.dataset.catalog;
+      removeCatalogAllFromGraph(cat);
+      group.querySelectorAll('.entry-item input[type="checkbox"]').forEach(c => c.checked = false);
+      group.querySelector('.cat-master').checked = false;
+      group.querySelector('.cat-count').textContent = '0/' + (state.entries[cat] || []).length;
     }
   });
 
