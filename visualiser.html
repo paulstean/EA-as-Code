@@ -545,7 +545,7 @@ function addEntryToGraph(entryId) {
   const pos = state.flowPositions[entryId];
   state.nodes.add({
     id: entry.id,
-    label: toTitle(catalog) + '\n' + entry.name,
+    label: '[' + toTitle(catalog) + ']\n' + entry.name,
     group: catalog,
     x: pos?.x,
     y: pos?.y,
@@ -572,7 +572,7 @@ function addCatalogAllToGraph(catalog) {
     const pos = state.flowPositions[entry.id];
     batch.push({
       id: entry.id,
-      label: toTitle(catalog) + '\n' + entry.name,
+      label: '[' + toTitle(catalog) + ']\n' + entry.name,
       group: catalog,
       x: pos?.x,
       y: pos?.y,
