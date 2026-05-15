@@ -90,13 +90,12 @@ The workflow uses the `github/copilot-code-review@v2` action. This requires:
 
 ### Step 2: Verify `GITHUB_TOKEN` Permissions
 
-The workflow needs the `copilot: write` permission. This is declared in the workflow file itself:
+The workflow declares these permissions in the workflow file itself:
 
 ```yaml
 permissions:
   contents: read
   pull-requests: write
-  copilot: write
 ```
 
 The `GITHUB_TOKEN` secret is automatically provided by GitHub Actions — no manual setup required.

@@ -505,7 +505,7 @@ Post a single PR comment containing:
 
 | Mechanism | Purpose |
 |---|---|
-| `GITHUB_TOKEN` (with `copilot: write` permission) | Authenticates the Copilot agent API calls within the workflow |
+| `GITHUB_TOKEN` | Authenticates the Copilot agent API calls within the workflow |
 
 ---
 
