@@ -1,0 +1,14 @@
+{
+  "catalogName": "TechnologyStandards",
+  "description": "Technology standards indicating what is approved, trialled, sunset, or forbidden",
+  "togafDomain": "Technology",
+  "fields": [
+    { "name": "id", "type": "string", "required": true, "description": "Unique identifier (ts-* prefix)" },
+    { "name": "name", "type": "string", "required": true, "description": "Technology or platform name" },
+    { "name": "category", "type": "string", "required": true, "description": "Technology category (e.g. CloudPlatform, ERP, Database, ProgrammingLanguage)" },
+    { "name": "status", "type": "string", "required": true, "description": "Lifecycle status: Approved, Trial, Sunset, or Forbidden" },
+    { "name": "description", "type": "string", "required": false, "description": "Rationale and scope of the standard" }
+  ],
+  "relationships": [],
+  "tags": ["foundational", "governance"]
+}

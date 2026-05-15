@@ -1,0 +1,15 @@
+{
+  "catalogName": "BusinessUnits",
+  "description": "Organisational units within the enterprise",
+  "togafDomain": "Business",
+  "fields": [
+    { "name": "id", "type": "string", "required": true, "description": "Unique identifier (bu-* prefix)" },
+    { "name": "name", "type": "string", "required": true, "description": "Display name of the business unit" },
+    { "name": "parentBusinessUnitId", "type": "string", "required": false, "description": "Parent business unit ID for hierarchical structure" },
+    { "name": "description", "type": "string", "required": false, "description": "Purpose and responsibilities of the business unit" }
+  ],
+  "relationships": [
+    { "targetCatalog": "BusinessUnits", "type": "selfRef", "field": "parentBusinessUnitId", "description": "Parent-child hierarchy between business units" }
+  ],
+  "tags": ["foundational"]
+}

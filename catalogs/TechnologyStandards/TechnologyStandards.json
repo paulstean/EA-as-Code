@@ -1,0 +1,72 @@
+[
+  {
+    "id": "ts-001",
+    "name": "Azure",
+    "category": "CloudPlatform",
+    "status": "Approved",
+    "description": "Microsoft Azure cloud platform for hosting applications, data, and integration services."
+  },
+  {
+    "id": "ts-002",
+    "name": "SAP S/4HANA",
+    "category": "ERP",
+    "status": "Approved",
+    "description": "SAP S/4HANA enterprise resource planning system for asset management, finance, and HR."
+  },
+  {
+    "id": "ts-003",
+    "name": "Dynamics 365",
+    "category": "CRM",
+    "status": "Approved",
+    "description": "Microsoft Dynamics 365 platform for customer relationship and warehouse management."
+  },
+  {
+    "id": "ts-004",
+    "name": "ADMS Platform",
+    "category": "OT",
+    "status": "Approved",
+    "description": "Advanced Distribution Management System platform for real-time network control and outage management."
+  },
+  {
+    "id": "ts-005",
+    "name": "PostgreSQL",
+    "category": "Database",
+    "status": "Trial",
+    "description": "Open-source relational database under evaluation for new application development."
+  },
+  {
+    "id": "ts-006",
+    "name": "Oracle Database",
+    "category": "Database",
+    "status": "Sunset",
+    "description": "Legacy Oracle databases scheduled for decommissioning and migration to Azure SQL or PostgreSQL."
+  },
+  {
+    "id": "ts-007",
+    "name": "Legacy Mainframe",
+    "category": "Infrastructure",
+    "status": "Forbidden",
+    "description": "IBM mainframe systems. No new workloads permitted. Existing instances must be migrated."
+  },
+  {
+    "id": "ts-008",
+    "name": "Kubernetes",
+    "category": "ContainerPlatform",
+    "status": "Approved",
+    "description": "AKS-managed Kubernetes for containerised application deployment."
+  },
+  {
+    "id": "ts-009",
+    "name": "Terraform",
+    "category": "IaC",
+    "status": "Approved",
+    "description": "HashiCorp Terraform for infrastructure-as-code provisioning."
+  },
+  {
+    "id": "ts-010",
+    "name": "Python",
+    "category": "ProgrammingLanguage",
+    "status": "Approved",
+    "description": "Python for data engineering, automation scripts, and integration development."
+  }
+]

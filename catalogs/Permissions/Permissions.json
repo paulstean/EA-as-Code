@@ -1,0 +1,122 @@
+[
+  {
+    "id": "perm-001",
+    "name": "Field Crew SAP Asset Management Write",
+    "businessUserGroupId": "bug-001",
+    "applicationComponentId": "app-001",
+    "accessLevel": "Write",
+    "description": "Field Crew can create and update work orders, record time, and report material usage in SAP AM."
+  },
+  {
+    "id": "perm-002",
+    "name": "Asset Engineer SAP Asset Management Admin",
+    "businessUserGroupId": "bug-002",
+    "applicationComponentId": "app-001",
+    "accessLevel": "Admin",
+    "description": "Asset Engineers have full administration access to SAP AM including asset master data and maintenance plans."
+  },
+  {
+    "id": "perm-003",
+    "name": "Network Controller ADMS Admin",
+    "businessUserGroupId": "bug-003",
+    "applicationComponentId": "app-004",
+    "accessLevel": "Admin",
+    "description": "Network Controllers have full control of ADMS for real-time monitoring, switching, and outage management."
+  },
+  {
+    "id": "perm-004",
+    "name": "Customer Service Rep Dynamics 365 CRM Write",
+    "businessUserGroupId": "bug-004",
+    "applicationComponentId": "app-005",
+    "accessLevel": "Write",
+    "description": "CSRs can create and update customer accounts, premises, and service requests in CRM."
+  },
+  {
+    "id": "perm-005",
+    "name": "Customer Service Rep SAP Finance Read",
+    "businessUserGroupId": "bug-004",
+    "applicationComponentId": "app-002",
+    "accessLevel": "Read",
+    "description": "CSRs can view customer billing details and payment history in SAP Finance."
+  },
+  {
+    "id": "perm-006",
+    "name": "Finance Analyst SAP Finance Admin",
+    "businessUserGroupId": "bug-005",
+    "applicationComponentId": "app-002",
+    "accessLevel": "Admin",
+    "description": "Finance Analysts have full administration of SAP Finance including ledger, AP, AR, and reporting."
+  },
+  {
+    "id": "perm-007",
+    "name": "Finance Analyst Dynamics 365 CRM Read",
+    "businessUserGroupId": "bug-005",
+    "applicationComponentId": "app-005",
+    "accessLevel": "Read",
+    "description": "Finance Analysts can view customer account and billing data in CRM for reconciliation."
+  },
+  {
+    "id": "perm-008",
+    "name": "HR Coordinator SAP Human Resources Admin",
+    "businessUserGroupId": "bug-006",
+    "applicationComponentId": "app-003",
+    "accessLevel": "Admin",
+    "description": "HR Coordinators have full administration of SAP HR including employee records and payroll."
+  },
+  {
+    "id": "perm-009",
+    "name": "Warehouse Operator Dynamics 365 WMS Write",
+    "businessUserGroupId": "bug-007",
+    "applicationComponentId": "app-006",
+    "accessLevel": "Write",
+    "description": "Warehouse Operators can record receipts, issues, transfers, and inventory counts in WMS."
+  },
+  {
+    "id": "perm-010",
+    "name": "Warehouse Operator SAP Asset Management Read",
+    "businessUserGroupId": "bug-007",
+    "applicationComponentId": "app-001",
+    "accessLevel": "Read",
+    "description": "Warehouse Operators can view work orders to plan material picks in SAP AM."
+  },
+  {
+    "id": "perm-011",
+    "name": "IT Administrator Azure Full Access",
+    "businessUserGroupId": "bug-008",
+    "applicationComponentId": "app-008",
+    "accessLevel": "Admin",
+    "description": "IT Administrators have full control of Azure Integration Bus and related Azure resources."
+  },
+  {
+    "id": "perm-012",
+    "name": "Executive Leadership SAP Finance Read",
+    "businessUserGroupId": "bug-009",
+    "applicationComponentId": "app-002",
+    "accessLevel": "Read",
+    "description": "Executive Leadership can view financial reports and dashboards in SAP Finance."
+  },
+  {
+    "id": "perm-013",
+    "name": "Executive Leadership ADMS Read",
+    "businessUserGroupId": "bug-009",
+    "applicationComponentId": "app-004",
+    "accessLevel": "Read",
+    "description": "Executive Leadership can view ADMS dashboards for network performance and outage KPIs."
+  },
+  {
+    "id": "perm-014",
+    "name": "Asset Engineer Azure Data Lake Read",
+    "businessUserGroupId": "bug-002",
+    "applicationComponentId": "app-007",
+    "accessLevel": "Read",
+    "description": "Asset Engineers can query asset analytics data in Azure Data Lake."
+  },
+  {
+    "id": "perm-015",
+    "name": "Field Crew Azure Data Lake Read",
+    "businessUserGroupId": "bug-001",
+    "applicationComponentId": "app-007",
+    "accessLevel": "Read",
+    "description": "Field Crew can view historical outage and asset data in Azure Data Lake."
+  }
+]

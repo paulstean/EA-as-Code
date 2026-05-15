@@ -1,0 +1,18 @@
+{
+  "catalogName": "ApplicationComponents",
+  "description": "Software applications and systems in the organisation",
+  "togafDomain": "Application",
+  "fields": [
+    { "name": "id", "type": "string", "required": true, "description": "Unique identifier (app-* prefix)" },
+    { "name": "name", "type": "string", "required": true, "description": "Display name of the application component" },
+    { "name": "technologyStandardId", "type": "string", "required": false, "description": "Technology standard this component uses" },
+    { "name": "infrastructureComponentId", "type": "string", "required": false, "description": "Infrastructure component hosting this application" },
+    { "name": "description", "type": "string", "required": false, "description": "Purpose and scope of the component" }
+  ],
+  "relationships": [
+    { "targetCatalog": "TechnologyStandards", "type": "ref", "field": "technologyStandardId", "description": "Technology standard used" },
+    { "targetCatalog": "InfrastructureComponents", "type": "ref", "field": "infrastructureComponentId", "description": "Hosting infrastructure" },
+    { "targetCatalog": "InformationFlows", "type": "child", "field": null, "description": "Source or target of information flows" }
+  ],
+  "tags": ["application"]
+}

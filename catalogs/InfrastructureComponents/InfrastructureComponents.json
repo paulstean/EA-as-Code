@@ -1,0 +1,58 @@
+[
+  {
+    "id": "infra-001",
+    "name": "ADMS Production Cluster",
+    "type": "KubernetesCluster",
+    "technologyStandardId": "ts-008",
+    "description": "AKS cluster hosting the ADMS real-time network control platform."
+  },
+  {
+    "id": "infra-002",
+    "name": "CRM App Service",
+    "type": "CloudService",
+    "technologyStandardId": "ts-001",
+    "description": "Azure App Service hosting Dynamics 365 CRM and WMS frontends."
+  },
+  {
+    "id": "infra-003",
+    "name": "SAP HANA Database",
+    "type": "Database",
+    "technologyStandardId": "ts-002",
+    "description": "SAP HANA in-memory database hosting SAP S/4HANA for AM, Finance, and HR."
+  },
+  {
+    "id": "infra-004",
+    "name": "Data Lake Storage",
+    "type": "CloudService",
+    "technologyStandardId": "ts-001",
+    "description": "Azure Data Lake Gen2 storage account for enterprise analytics."
+  },
+  {
+    "id": "infra-005",
+    "name": "Integration Gateway",
+    "type": "CloudService",
+    "technologyStandardId": "ts-001",
+    "description": "Azure API Management and Service Bus instances for system integration."
+  },
+  {
+    "id": "infra-006",
+    "name": "ADMS SCADA Gateway",
+    "type": "Server",
+    "technologyStandardId": "ts-004",
+    "description": "On-premises SCADA front-end processor connecting substation RTUs to ADMS."
+  },
+  {
+    "id": "infra-007",
+    "name": "Corporate Active Directory",
+    "type": "Server",
+    "technologyStandardId": "ts-001",
+    "description": "Microsoft Active Directory for identity management and access control."
+  },
+  {
+    "id": "infra-008",
+    "name": "Network Operations Centre",
+    "type": "Server",
+    "technologyStandardId": "ts-004",
+    "description": "NOC workstations and display systems for real-time network monitoring."
+  }
+]

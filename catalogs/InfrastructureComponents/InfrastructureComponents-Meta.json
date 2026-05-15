@@ -1,0 +1,17 @@
+{
+  "catalogName": "InfrastructureComponents",
+  "description": "Physical and virtual infrastructure hosting applications and services",
+  "togafDomain": "Technology",
+  "fields": [
+    { "name": "id", "type": "string", "required": true, "description": "Unique identifier (infra-* prefix)" },
+    { "name": "name", "type": "string", "required": true, "description": "Display name of the component" },
+    { "name": "type", "type": "string", "required": true, "description": "Type (Server, Database, KubernetesCluster, CloudService, etc.)" },
+    { "name": "technologyStandardId", "type": "string", "required": false, "description": "Technology standard this component uses" },
+    { "name": "description", "type": "string", "required": false, "description": "Purpose and configuration of the component" }
+  ],
+  "relationships": [
+    { "targetCatalog": "TechnologyStandards", "type": "ref", "field": "technologyStandardId", "description": "Technology standard used" },
+    { "targetCatalog": "ApplicationComponents", "type": "parent", "field": null, "description": "Hosts application components" }
+  ],
+  "tags": ["technology"]
+}

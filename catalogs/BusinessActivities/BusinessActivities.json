@@ -1,0 +1,146 @@
+[
+  {
+    "id": "ba-001",
+    "name": "Create Work Order",
+    "businessProcessId": "bp-001",
+    "businessUserGroupId": "bug-002",
+    "supportedByApplicationComponentIds": ["app-001"],
+    "description": "Asset Engineer creates a work order for planned maintenance or corrective repair in SAP AM."
+  },
+  {
+    "id": "ba-002",
+    "name": "Update Asset Register",
+    "businessProcessId": "bp-001",
+    "businessUserGroupId": "bug-002",
+    "supportedByApplicationComponentIds": ["app-001"],
+    "description": "Update asset master data in SAP AM following inspection or replacement."
+  },
+  {
+    "id": "ba-003",
+    "name": "Schedule Preventive Maintenance",
+    "businessProcessId": "bp-001",
+    "businessUserGroupId": "bug-002",
+    "supportedByApplicationComponentIds": ["app-001"],
+    "description": "Generate and schedule preventive maintenance plans based on asset age and condition."
+  },
+  {
+    "id": "ba-004",
+    "name": "Generate Customer Invoice",
+    "businessProcessId": "bp-002",
+    "businessUserGroupId": "bug-005",
+    "supportedByApplicationComponentIds": ["app-002", "app-005"],
+    "description": "Generate monthly invoices based on meter reads and tariff structures."
+  },
+  {
+    "id": "ba-005",
+    "name": "Process Payment",
+    "businessProcessId": "bp-002",
+    "businessUserGroupId": "bug-005",
+    "supportedByApplicationComponentIds": ["app-002", "app-005"],
+    "description": "Record and reconcile customer payments against outstanding invoices."
+  },
+  {
+    "id": "ba-006",
+    "name": "Detect Outage via ADMS",
+    "businessProcessId": "bp-003",
+    "businessUserGroupId": "bug-003",
+    "supportedByApplicationComponentIds": ["app-004"],
+    "description": "ADMS detects a fault event from network telemetry and alerts the Network Controller."
+  },
+  {
+    "id": "ba-007",
+    "name": "Dispatch Crew",
+    "businessProcessId": "bp-003",
+    "businessUserGroupId": "bug-001",
+    "supportedByApplicationComponentIds": ["app-004"],
+    "description": "Network Controller dispatches the nearest available field crew to the outage location."
+  },
+  {
+    "id": "ba-008",
+    "name": "Restore Supply",
+    "businessProcessId": "bp-003",
+    "businessUserGroupId": "bug-001",
+    "supportedByApplicationComponentIds": ["app-004", "app-001"],
+    "description": "Field crew isolates the fault, restores supply, and records actions in ADMS and SAP AM."
+  },
+  {
+    "id": "ba-009",
+    "name": "Notify Customers",
+    "businessProcessId": "bp-003",
+    "businessUserGroupId": "bug-005",
+    "supportedByApplicationComponentIds": ["app-005"],
+    "description": "CRM sends proactive outage notifications to affected customers via SMS and email."
+  },
+  {
+    "id": "ba-010",
+    "name": "Receive Materials",
+    "businessProcessId": "bp-004",
+    "businessUserGroupId": "bug-007",
+    "supportedByApplicationComponentIds": ["app-006"],
+    "description": "Warehouse Operator receives incoming materials against purchase orders in WMS."
+  },
+  {
+    "id": "ba-011",
+    "name": "Issue Materials to Work Order",
+    "businessProcessId": "bp-004",
+    "businessUserGroupId": "bug-007",
+    "supportedByApplicationComponentIds": ["app-006"],
+    "description": "Pick and issue materials from inventory against a work order request."
+  },
+  {
+    "id": "ba-012",
+    "name": "Conduct Inventory Count",
+    "businessProcessId": "bp-004",
+    "businessUserGroupId": "bug-007",
+    "supportedByApplicationComponentIds": ["app-006"],
+    "description": "Perform periodic cycle counts and reconcile inventory variances in WMS."
+  },
+  {
+    "id": "ba-013",
+    "name": "Post Journal Entry",
+    "businessProcessId": "bp-005",
+    "businessUserGroupId": "bug-005",
+    "supportedByApplicationComponentIds": ["app-002"],
+    "description": "Post financial journal entries for asset depreciation, materials consumption, and billing revenue."
+  },
+  {
+    "id": "ba-014",
+    "name": "Run Month-End Close",
+    "businessProcessId": "bp-005",
+    "businessUserGroupId": "bug-005",
+    "supportedByApplicationComponentIds": ["app-002"],
+    "description": "Execute month-end financial close procedures and generate management reports."
+  },
+  {
+    "id": "ba-015",
+    "name": "Post Open Position",
+    "businessProcessId": "bp-006",
+    "businessUserGroupId": "bug-006",
+    "supportedByApplicationComponentIds": ["app-003"],
+    "description": "HR Coordinator creates and publishes open job positions in SAP HR."
+  },
+  {
+    "id": "ba-016",
+    "name": "Process Payroll",
+    "businessProcessId": "bp-006",
+    "businessUserGroupId": "bug-006",
+    "supportedByApplicationComponentIds": ["app-003"],
+    "description": "Process monthly payroll including timesheets, deductions, and bank file generation."
+  },
+  {
+    "id": "ba-017",
+    "name": "Create Customer Account",
+    "businessProcessId": "bp-007",
+    "businessUserGroupId": "bug-004",
+    "supportedByApplicationComponentIds": ["app-005"],
+    "description": "Register a new customer account with premise details and connection information."
+  },
+  {
+    "id": "ba-018",
+    "name": "Update Customer Details",
+    "businessProcessId": "bp-007",
+    "businessUserGroupId": "bug-004",
+    "supportedByApplicationComponentIds": ["app-005"],
+    "description": "Update customer contact information, billing preferences, or premise details."
+  }
+]

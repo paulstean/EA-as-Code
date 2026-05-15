@@ -1,0 +1,65 @@
+[
+  {
+    "id": "app-001",
+    "name": "SAP Asset Management",
+    "technologyStandardId": "ts-002",
+    "infrastructureComponentId": "infra-003",
+    "description": "SAP S/4HANA module for managing asset master data, work orders, and maintenance plans."
+  },
+  {
+    "id": "app-002",
+    "name": "SAP Finance",
+    "technologyStandardId": "ts-002",
+    "infrastructureComponentId": "infra-003",
+    "description": "SAP S/4HANA module for financial accounting, controlling, accounts payable, and receivable."
+  },
+  {
+    "id": "app-003",
+    "name": "SAP Human Resources",
+    "technologyStandardId": "ts-002",
+    "infrastructureComponentId": "infra-003",
+    "description": "SAP S/4HANA module for HR administration, payroll, and organisational management."
+  },
+  {
+    "id": "app-004",
+    "name": "ADMS",
+    "technologyStandardId": "ts-004",
+    "infrastructureComponentId": "infra-001",
+    "description": "Advanced Distribution Management System for real-time network monitoring, control, and outage management."
+  },
+  {
+    "id": "app-005",
+    "name": "Dynamics 365 CRM",
+    "technologyStandardId": "ts-003",
+    "infrastructureComponentId": "infra-002",
+    "description": "Microsoft Dynamics 365 Customer Relationship Management system for accounts, billing, and service."
+  },
+  {
+    "id": "app-006",
+    "name": "Dynamics 365 WMS",
+    "technologyStandardId": "ts-003",
+    "infrastructureComponentId": "infra-002",
+    "description": "Microsoft Dynamics 365 Warehouse Management System for inventory and logistics."
+  },
+  {
+    "id": "app-007",
+    "name": "Azure Data Lake",
+    "technologyStandardId": "ts-001",
+    "infrastructureComponentId": "infra-004",
+    "description": "Azure Data Lake Gen2 storage for analytics, reporting, and data science workloads."
+  },
+  {
+    "id": "app-008",
+    "name": "Azure Integration Bus",
+    "technologyStandardId": "ts-001",
+    "infrastructureComponentId": "infra-005",
+    "description": "Azure API Management and Service Bus for application integration and message brokering."
+  },
+  {
+    "id": "app-009",
+    "name": "Corporate Portal",
+    "technologyStandardId": "ts-001",
+    "infrastructureComponentId": "infra-005",
+    "description": "Internal employee portal for self-service HR, procurement requests, and company news."
+  }
+]

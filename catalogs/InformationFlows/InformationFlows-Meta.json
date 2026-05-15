@@ -1,0 +1,19 @@
+{
+  "catalogName": "InformationFlows",
+  "description": "Data flows between application components carrying data entities",
+  "togafDomain": "Application",
+  "fields": [
+    { "name": "id", "type": "string", "required": true, "description": "Unique identifier (flow-* prefix)" },
+    { "name": "name", "type": "string", "required": true, "description": "Display name of the information flow" },
+    { "name": "sourceApplicationComponentId", "type": "string", "required": true, "description": "Source application component" },
+    { "name": "targetApplicationComponentId", "type": "string", "required": true, "description": "Target application component" },
+    { "name": "dataEntityIds", "type": "array", "required": true, "description": "Data entities carried by this flow" },
+    { "name": "description", "type": "string", "required": false, "description": "Purpose and content of the flow" }
+  ],
+  "relationships": [
+    { "targetCatalog": "ApplicationComponents", "type": "ref", "field": "sourceApplicationComponentId", "description": "Source application component" },
+    { "targetCatalog": "ApplicationComponents", "type": "ref", "field": "targetApplicationComponentId", "description": "Target application component" },
+    { "targetCatalog": "DataEntities", "type": "refArray", "field": "dataEntityIds", "description": "Data entities carried" }
+  ],
+  "tags": ["application"]
+}

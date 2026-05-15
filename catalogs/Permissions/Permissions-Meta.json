@@ -1,0 +1,18 @@
+{
+  "catalogName": "Permissions",
+  "description": "Access rights granted to user groups for application components",
+  "togafDomain": "Technology",
+  "fields": [
+    { "name": "id", "type": "string", "required": true, "description": "Unique identifier (perm-* prefix)" },
+    { "name": "name", "type": "string", "required": true, "description": "Display name of the permission" },
+    { "name": "businessUserGroupId", "type": "string", "required": true, "description": "User group granted this permission" },
+    { "name": "applicationComponentId", "type": "string", "required": true, "description": "Application component this applies to" },
+    { "name": "accessLevel", "type": "string", "required": true, "description": "Access level: Read, Write, Admin, FullControl" },
+    { "name": "description", "type": "string", "required": false, "description": "What this permission enables" }
+  ],
+  "relationships": [
+    { "targetCatalog": "BusinessUserGroups", "type": "ref", "field": "businessUserGroupId", "description": "Granted user group" },
+    { "targetCatalog": "ApplicationComponents", "type": "ref", "field": "applicationComponentId", "description": "Target application component" }
+  ],
+  "tags": ["technology", "security"]
+}

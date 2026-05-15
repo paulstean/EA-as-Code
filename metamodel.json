@@ -1,0 +1,284 @@
+{
+  "metamodelVersion": "1.0",
+  "togafAlignment": {
+    "framework": "TOGAF 9.2",
+    "architectureDomains": ["Business", "Data", "Application", "Technology"]
+  },
+  "entityTypes": [
+    {
+      "name": "BusinessUnit",
+      "catalog": "BusinessUnits",
+      "togafDomain": "Business",
+      "description": "An organisational unit within the enterprise",
+      "fields": [
+        { "name": "id", "type": "string", "required": true, "description": "Unique identifier (e.g. bu-001)" },
+        { "name": "name", "type": "string", "required": true, "description": "Display name of the business unit" },
+        { "name": "parentBusinessUnitId", "type": "string", "required": false, "description": "Parent business unit ID" },
+        { "name": "description", "type": "string", "required": false, "description": "Description of the business unit" }
+      ]
+    },
+    {
+      "name": "BusinessProcess",
+      "catalog": "BusinessProcesses",
+      "togafDomain": "Business",
+      "description": "An end-to-end process that delivers value",
+      "fields": [
+        { "name": "id", "type": "string", "required": true, "description": "Unique identifier" },
+        { "name": "name", "type": "string", "required": true, "description": "Display name of the process" },
+        { "name": "owningBusinessUnitId", "type": "string", "required": true, "description": "Business unit that owns this process" },
+        { "name": "description", "type": "string", "required": false, "description": "Description of the process" }
+      ]
+    },
+    {
+      "name": "BusinessActivity",
+      "catalog": "BusinessActivities",
+      "togafDomain": "Business",
+      "description": "A discrete step within a business process",
+      "fields": [
+        { "name": "id", "type": "string", "required": true, "description": "Unique identifier" },
+        { "name": "name", "type": "string", "required": true, "description": "Display name of the activity" },
+        { "name": "businessProcessId", "type": "string", "required": true, "description": "Business process this activity belongs to" },
+        { "name": "businessUserGroupId", "type": "string", "required": true, "description": "Business user group that performs this activity" },
+        { "name": "supportedByApplicationComponentIds", "type": "array", "required": false, "description": "Application components that support this activity" },
+        { "name": "description", "type": "string", "required": false, "description": "Description of the activity" }
+      ]
+    },
+    {
+      "name": "DataDomain",
+      "catalog": "DataDomains",
+      "togafDomain": "Data",
+      "description": "A high-level classification of data",
+      "fields": [
+        { "name": "id", "type": "string", "required": true, "description": "Unique identifier" },
+        { "name": "name", "type": "string", "required": true, "description": "Display name of the domain" },
+        { "name": "owningBusinessUnitId", "type": "string", "required": true, "description": "Business unit responsible for this data domain" },
+        { "name": "description", "type": "string", "required": false, "description": "Description of the data domain" }
+      ]
+    },
+    {
+      "name": "DataEntity",
+      "catalog": "DataEntities",
+      "togafDomain": "Data",
+      "description": "A logical data entity within a data domain",
+      "fields": [
+        { "name": "id", "type": "string", "required": true, "description": "Unique identifier" },
+        { "name": "name", "type": "string", "required": true, "description": "Display name of the entity" },
+        { "name": "dataDomainId", "type": "string", "required": true, "description": "Data domain this entity belongs to" },
+        { "name": "description", "type": "string", "required": false, "description": "Description of the data entity" }
+      ]
+    },
+    {
+      "name": "ApplicationComponent",
+      "catalog": "ApplicationComponents",
+      "togafDomain": "Application",
+      "description": "A software application or system",
+      "fields": [
+        { "name": "id", "type": "string", "required": true, "description": "Unique identifier" },
+        { "name": "name", "type": "string", "required": true, "description": "Display name of the component" },
+        { "name": "technologyStandardId", "type": "string", "required": false, "description": "Technology standard this component uses" },
+        { "name": "infrastructureComponentId", "type": "string", "required": false, "description": "Infrastructure component hosting this application" },
+        { "name": "description", "type": "string", "required": false, "description": "Description of the component" }
+      ]
+    },
+    {
+      "name": "InformationFlow",
+      "catalog": "InformationFlows",
+      "togafDomain": "Application",
+      "description": "A data flow between two application components",
+      "fields": [
+        { "name": "id", "type": "string", "required": true, "description": "Unique identifier" },
+        { "name": "name", "type": "string", "required": true, "description": "Display name of the flow" },
+        { "name": "sourceApplicationComponentId", "type": "string", "required": true, "description": "Source application component" },
+        { "name": "targetApplicationComponentId", "type": "string", "required": true, "description": "Target application component" },
+        { "name": "dataEntityIds", "type": "array", "required": true, "description": "Data entities carried by this flow" },
+        { "name": "description", "type": "string", "required": false, "description": "Description of the information flow" }
+      ]
+    },
+    {
+      "name": "InfrastructureComponent",
+      "catalog": "InfrastructureComponents",
+      "togafDomain": "Technology",
+      "description": "Physical or virtual infrastructure",
+      "fields": [
+        { "name": "id", "type": "string", "required": true, "description": "Unique identifier" },
+        { "name": "name", "type": "string", "required": true, "description": "Display name of the component" },
+        { "name": "type", "type": "string", "required": true, "description": "Type of infrastructure component" },
+        { "name": "technologyStandardId", "type": "string", "required": false, "description": "Technology standard used" },
+        { "name": "description", "type": "string", "required": false, "description": "Description of the component" }
+      ]
+    },
+    {
+      "name": "BusinessUserGroup",
+      "catalog": "BusinessUserGroups",
+      "togafDomain": "Business",
+      "description": "A group of users with a common role or function",
+      "fields": [
+        { "name": "id", "type": "string", "required": true, "description": "Unique identifier" },
+        { "name": "name", "type": "string", "required": true, "description": "Display name of the group" },
+        { "name": "description", "type": "string", "required": false, "description": "Description of the user group" }
+      ]
+    },
+    {
+      "name": "Permission",
+      "catalog": "Permissions",
+      "togafDomain": "Technology",
+      "description": "A right or access level assigned to a user group for a system",
+      "fields": [
+        { "name": "id", "type": "string", "required": true, "description": "Unique identifier" },
+        { "name": "name", "type": "string", "required": true, "description": "Display name of the permission" },
+        { "name": "businessUserGroupId", "type": "string", "required": true, "description": "User group granted this permission" },
+        { "name": "applicationComponentId", "type": "string", "required": true, "description": "Application component this permission applies to" },
+        { "name": "accessLevel", "type": "string", "required": true, "description": "Level of access granted" },
+        { "name": "description", "type": "string", "required": false, "description": "Description of the permission" }
+      ]
+    },
+    {
+      "name": "TechnologyStandard",
+      "catalog": "TechnologyStandards",
+      "togafDomain": "Technology",
+      "description": "An approved, trialled, sunset, or forbidden technology",
+      "fields": [
+        { "name": "id", "type": "string", "required": true, "description": "Unique identifier" },
+        { "name": "name", "type": "string", "required": true, "description": "Display name of the standard" },
+        { "name": "category", "type": "string", "required": true, "description": "Technology category" },
+        { "name": "status", "type": "string", "required": true, "description": "Lifecycle status: Approved, Trial, Sunset, or Forbidden" },
+        { "name": "description", "type": "string", "required": false, "description": "Description of the standard" }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "source": "BusinessUnit",
+      "target": "BusinessUnit",
+      "cardinality": "one-to-many",
+      "viaField": "parentBusinessUnitId",
+      "description": "A Business Unit may contain child Business Units"
+    },
+    {
+      "source": "BusinessProcess",
+      "target": "BusinessUnit",
+      "cardinality": "many-to-one",
+      "viaField": "owningBusinessUnitId",
+      "description": "A Business Process is owned by one Business Unit"
+    },
+    {
+      "source": "BusinessActivity",
+      "target": "BusinessProcess",
+      "cardinality": "many-to-one",
+      "viaField": "businessProcessId",
+      "description": "A Business Activity belongs to one Business Process"
+    },
+    {
+      "source": "BusinessActivity",
+      "target": "BusinessUserGroup",
+      "cardinality": "many-to-one",
+      "viaField": "businessUserGroupId",
+      "description": "A Business Activity is performed by one Business User Group"
+    },
+    {
+      "source": "BusinessActivity",
+      "target": "ApplicationComponent",
+      "cardinality": "many-to-many",
+      "viaField": "supportedByApplicationComponentIds",
+      "description": "A Business Activity may be supported by Application Components"
+    },
+    {
+      "source": "DataDomain",
+      "target": "BusinessUnit",
+      "cardinality": "many-to-one",
+      "viaField": "owningBusinessUnitId",
+      "description": "A Data Domain is owned by one Business Unit"
+    },
+    {
+      "source": "DataEntity",
+      "target": "DataDomain",
+      "cardinality": "many-to-one",
+      "viaField": "dataDomainId",
+      "description": "A Data Entity belongs to one Data Domain"
+    },
+    {
+      "source": "ApplicationComponent",
+      "target": "TechnologyStandard",
+      "cardinality": "many-to-one",
+      "viaField": "technologyStandardId",
+      "description": "An Application Component may use a Technology Standard"
+    },
+    {
+      "source": "ApplicationComponent",
+      "target": "InfrastructureComponent",
+      "cardinality": "many-to-one",
+      "viaField": "infrastructureComponentId",
+      "description": "An Application Component is hosted on an Infrastructure Component"
+    },
+    {
+      "source": "ApplicationComponent",
+      "target": "InformationFlow",
+      "cardinality": "one-to-many",
+      "viaField": "sourceApplicationComponentId",
+      "description": "An Application Component may send Information Flows"
+    },
+    {
+      "source": "ApplicationComponent",
+      "target": "InformationFlow",
+      "cardinality": "one-to-many",
+      "viaField": "targetApplicationComponentId",
+      "description": "An Application Component may receive Information Flows"
+    },
+    {
+      "source": "InformationFlow",
+      "target": "ApplicationComponent",
+      "cardinality": "many-to-one",
+      "viaField": "sourceApplicationComponentId",
+      "description": "An Information Flow originates from one Application Component"
+    },
+    {
+      "source": "InformationFlow",
+      "target": "ApplicationComponent",
+      "cardinality": "many-to-one",
+      "viaField": "targetApplicationComponentId",
+      "description": "An Information Flow terminates at one Application Component"
+    },
+    {
+      "source": "InformationFlow",
+      "target": "DataEntity",
+      "cardinality": "many-to-many",
+      "viaField": "dataEntityIds",
+      "description": "An Information Flow carries Data Entities"
+    },
+    {
+      "source": "InfrastructureComponent",
+      "target": "TechnologyStandard",
+      "cardinality": "many-to-one",
+      "viaField": "technologyStandardId",
+      "description": "An Infrastructure Component may use a Technology Standard"
+    },
+    {
+      "source": "Permission",
+      "target": "BusinessUserGroup",
+      "cardinality": "many-to-one",
+      "viaField": "businessUserGroupId",
+      "description": "A Permission is granted to one Business User Group"
+    },
+    {
+      "source": "Permission",
+      "target": "ApplicationComponent",
+      "cardinality": "many-to-one",
+      "viaField": "applicationComponentId",
+      "description": "A Permission applies to one Application Component"
+    }
+  ],
+  "enums": {
+    "TechnologyStandardStatus": {
+      "values": ["Approved", "Trial", "Sunset", "Forbidden"],
+      "description": "Lifecycle status of a technology standard"
+    },
+    "InfrastructureComponentType": {
+      "values": ["Server", "Database", "NetworkDevice", "KubernetesCluster", "LoadBalancer", "Firewall", "Storage", "CloudService", "Other"],
+      "description": "Type of infrastructure component"
+    },
+    "PermissionAccessLevel": {
+      "values": ["Read", "Write", "Admin", "FullControl"],
+      "description": "Access level granted by a permission"
+    }
+  }
+}

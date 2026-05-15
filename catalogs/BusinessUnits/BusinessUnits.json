@@ -1,0 +1,50 @@
+[
+  {
+    "id": "bu-001",
+    "name": "Network Operations",
+    "parentBusinessUnitId": null,
+    "description": "Responsible for the real-time operation, monitoring, and control of the electrical distribution network."
+  },
+  {
+    "id": "bu-002",
+    "name": "Asset Management",
+    "parentBusinessUnitId": null,
+    "description": "Manages the lifecycle of physical assets including poles, transformers, substations, and cables."
+  },
+  {
+    "id": "bu-003",
+    "name": "Finance",
+    "parentBusinessUnitId": null,
+    "description": "Responsible for financial accounting, budgeting, treasury, and regulatory reporting."
+  },
+  {
+    "id": "bu-004",
+    "name": "Human Resources",
+    "parentBusinessUnitId": null,
+    "description": "Manages workforce planning, recruitment, payroll, and employee relations."
+  },
+  {
+    "id": "bu-005",
+    "name": "Information Technology",
+    "parentBusinessUnitId": null,
+    "description": "Provides and supports IT systems, cloud infrastructure, integration platforms, and cybersecurity."
+  },
+  {
+    "id": "bu-006",
+    "name": "Customer Service",
+    "parentBusinessUnitId": null,
+    "description": "Manages customer accounts, billing, service requests, and complaint resolution."
+  },
+  {
+    "id": "bu-007",
+    "name": "Warehouse & Logistics",
+    "parentBusinessUnitId": null,
+    "description": "Manages materials inventory, procurement, warehousing, and logistics for field operations."
+  },
+  {
+    "id": "bu-008",
+    "name": "Executive",
+    "parentBusinessUnitId": null,
+    "description": "Corporate leadership including CEO, CFO, COO, and functional heads."
+  }
+]

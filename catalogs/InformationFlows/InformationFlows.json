@@ -1,0 +1,98 @@
+[
+  {
+    "id": "flow-001",
+    "name": "Customer Billing Data from CRM to SAP Finance",
+    "sourceApplicationComponentId": "app-005",
+    "targetApplicationComponentId": "app-002",
+    "dataEntityIds": ["de-005", "de-010"],
+    "description": "Customer account and invoice data flows from Dynamics 365 CRM to SAP Finance for ledger posting."
+  },
+  {
+    "id": "flow-002",
+    "name": "Outage Notifications from ADMS to CRM",
+    "sourceApplicationComponentId": "app-004",
+    "targetApplicationComponentId": "app-005",
+    "dataEntityIds": ["de-008", "de-006"],
+    "description": "ADMS sends outage events and affected premises to Dynamics 365 CRM for customer notification."
+  },
+  {
+    "id": "flow-003",
+    "name": "Asset Register Updates from SAP AM to ADMS",
+    "sourceApplicationComponentId": "app-001",
+    "targetApplicationComponentId": "app-004",
+    "dataEntityIds": ["de-001", "de-002", "de-003", "de-004"],
+    "description": "SAP Asset Management sends asset master data changes to ADMS for network model alignment."
+  },
+  {
+    "id": "flow-004",
+    "name": "Material Requests from CRM to WMS",
+    "sourceApplicationComponentId": "app-005",
+    "targetApplicationComponentId": "app-006",
+    "dataEntityIds": ["de-008", "de-020"],
+    "description": "Service requests requiring materials flow from CRM to WMS for inventory allocation."
+  },
+  {
+    "id": "flow-005",
+    "name": "Network Telemetry from ADMS to Data Lake",
+    "sourceApplicationComponentId": "app-004",
+    "targetApplicationComponentId": "app-007",
+    "dataEntityIds": ["de-015", "de-016", "de-018"],
+    "description": "ADMS streams real-time network telemetry and meter data to Azure Data Lake for analytics."
+  },
+  {
+    "id": "flow-006",
+    "name": "Financial Reports from SAP Finance to Data Lake",
+    "sourceApplicationComponentId": "app-002",
+    "targetApplicationComponentId": "app-007",
+    "dataEntityIds": ["de-009", "de-011"],
+    "description": "SAP Finance exports general ledger and cost centre data to Azure Data Lake for regulatory reporting."
+  },
+  {
+    "id": "flow-007",
+    "name": "Employee Directory from SAP HR to Corporate Portal",
+    "sourceApplicationComponentId": "app-003",
+    "targetApplicationComponentId": "app-009",
+    "dataEntityIds": ["de-012", "de-014"],
+    "description": "SAP HR publishes employee directory and organisational structure to the Corporate Portal."
+  },
+  {
+    "id": "flow-008",
+    "name": "Asset Depreciation from SAP AM to SAP Finance",
+    "sourceApplicationComponentId": "app-001",
+    "targetApplicationComponentId": "app-002",
+    "dataEntityIds": ["de-001", "de-004", "de-009"],
+    "description": "Asset depreciation postings flow from SAP Asset Management to SAP Finance for ledger updates."
+  },
+  {
+    "id": "flow-009",
+    "name": "Workforce Data from CRM to SAP HR",
+    "sourceApplicationComponentId": "app-005",
+    "targetApplicationComponentId": "app-003",
+    "dataEntityIds": ["de-008", "de-012"],
+    "description": "Workforce management data from CRM service scheduling flows to SAP HR."
+  },
+  {
+    "id": "flow-010",
+    "name": "Material Issue Confirmation from WMS to SAP AM",
+    "sourceApplicationComponentId": "app-006",
+    "targetApplicationComponentId": "app-001",
+    "dataEntityIds": ["de-020", "de-022"],
+    "description": "WMS confirms material issues to work orders, updating SAP Asset Management inventory."
+  },
+  {
+    "id": "flow-011",
+    "name": "Integration Bus Interconnect",
+    "sourceApplicationComponentId": "app-008",
+    "targetApplicationComponentId": "app-008",
+    "dataEntityIds": [],
+    "description": "Azure Integration Bus provides message brokering between all connected systems."
+  },
+  {
+    "id": "flow-012",
+    "name": "Customer Analytics from CRM to Data Lake",
+    "sourceApplicationComponentId": "app-005",
+    "targetApplicationComponentId": "app-007",
+    "dataEntityIds": ["de-005", "de-006", "de-007", "de-019"],
+    "description": "CRM exports customer, premise, meter, and consumption data to Azure Data Lake for analytics."
+  }
+]

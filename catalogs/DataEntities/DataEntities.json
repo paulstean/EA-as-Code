@@ -1,0 +1,134 @@
+[
+  {
+    "id": "de-001",
+    "name": "Transformer",
+    "dataDomainId": "dd-001",
+    "description": "Electrical transformer asset including ratings, location, installation date, and maintenance history."
+  },
+  {
+    "id": "de-002",
+    "name": "Pole",
+    "dataDomainId": "dd-001",
+    "description": "Distribution pole asset including material, height, condition, and attached equipment."
+  },
+  {
+    "id": "de-003",
+    "name": "Cable Segment",
+    "dataDomainId": "dd-001",
+    "description": "Underground or aerial cable segment connecting network nodes."
+  },
+  {
+    "id": "de-004",
+    "name": "Substation",
+    "dataDomainId": "dd-001",
+    "description": "Substation asset including transformers, switchgear, protection relays, and SCADA connectivity."
+  },
+  {
+    "id": "de-005",
+    "name": "Account",
+    "dataDomainId": "dd-002",
+    "description": "Customer account including billing details, tariff assignment, and payment history."
+  },
+  {
+    "id": "de-006",
+    "name": "Premise",
+    "dataDomainId": "dd-002",
+    "description": "Physical premise address, connection point, and metering configuration."
+  },
+  {
+    "id": "de-007",
+    "name": "Meter",
+    "dataDomainId": "dd-002",
+    "description": "Electricity meter device including type, serial number, and installation details."
+  },
+  {
+    "id": "de-008",
+    "name": "Service Request",
+    "dataDomainId": "dd-002",
+    "description": "Customer service request such as new connection, fault report, or billing inquiry."
+  },
+  {
+    "id": "de-009",
+    "name": "General Ledger Account",
+    "dataDomainId": "dd-003",
+    "description": "General ledger chart of accounts for financial reporting and regulatory compliance."
+  },
+  {
+    "id": "de-010",
+    "name": "Invoice",
+    "dataDomainId": "dd-003",
+    "description": "Customer invoice including charges, taxes, and payment status."
+  },
+  {
+    "id": "de-011",
+    "name": "Cost Centre",
+    "dataDomainId": "dd-003",
+    "description": "Cost centre structure for budgeting and expense allocation across business units."
+  },
+  {
+    "id": "de-012",
+    "name": "Employee Record",
+    "dataDomainId": "dd-004",
+    "description": "Employee personal details, employment history, and organisational assignment."
+  },
+  {
+    "id": "de-013",
+    "name": "Payroll Entry",
+    "dataDomainId": "dd-004",
+    "description": "Monthly payroll record including salary, deductions, and bank transfer details."
+  },
+  {
+    "id": "de-014",
+    "name": "Organisational Structure",
+    "dataDomainId": "dd-004",
+    "description": "Organisational hierarchy including reporting lines and position assignments."
+  },
+  {
+    "id": "de-015",
+    "name": "Feeder",
+    "dataDomainId": "dd-005",
+    "description": "Primary distribution feeder including voltage level, capacity, and connected substations."
+  },
+  {
+    "id": "de-016",
+    "name": "Substation Node",
+    "dataDomainId": "dd-005",
+    "description": "Topological node in the network model representing a substation connection point."
+  },
+  {
+    "id": "de-017",
+    "name": "Sectionaliser",
+    "dataDomainId": "dd-005",
+    "description": "Network sectionalising device used for fault isolation and supply restoration."
+  },
+  {
+    "id": "de-018",
+    "name": "Meter Read",
+    "dataDomainId": "dd-006",
+    "description": "Interval meter reading data including timestamp, consumption, and quality flags."
+  },
+  {
+    "id": "de-019",
+    "name": "Consumption Profile",
+    "dataDomainId": "dd-006",
+    "description": "Aggregated customer consumption patterns used for load forecasting and network planning."
+  },
+  {
+    "id": "de-020",
+    "name": "Material Stock Item",
+    "dataDomainId": "dd-007",
+    "description": "Inventory item including stock code, description, unit of measure, and current stock level."
+  },
+  {
+    "id": "de-021",
+    "name": "Purchase Order",
+    "dataDomainId": "dd-007",
+    "description": "Purchase order for materials including line items, quantities, and delivery schedule."
+  },
+  {
+    "id": "de-022",
+    "name": "Inventory Transaction",
+    "dataDomainId": "dd-007",
+    "description": "Inventory movement record for receipts, issues, transfers, and adjustments."
+  }
+]

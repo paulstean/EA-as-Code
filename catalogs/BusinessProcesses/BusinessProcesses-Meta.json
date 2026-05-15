@@ -1,0 +1,16 @@
+{
+  "catalogName": "BusinessProcesses",
+  "description": "End-to-end business processes that deliver value",
+  "togafDomain": "Business",
+  "fields": [
+    { "name": "id", "type": "string", "required": true, "description": "Unique identifier (bp-* prefix)" },
+    { "name": "name", "type": "string", "required": true, "description": "Display name of the process" },
+    { "name": "owningBusinessUnitId", "type": "string", "required": true, "description": "Business unit that owns this process" },
+    { "name": "description", "type": "string", "required": false, "description": "Purpose and scope of the process" }
+  ],
+  "relationships": [
+    { "targetCatalog": "BusinessUnits", "type": "ref", "field": "owningBusinessUnitId", "description": "Owning business unit" },
+    { "targetCatalog": "BusinessActivities", "type": "child", "field": null, "description": "Composed of business activities" }
+  ],
+  "tags": ["business"]
+}

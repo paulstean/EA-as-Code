@@ -1,0 +1,16 @@
+{
+  "catalogName": "DataDomains",
+  "description": "High-level classifications of data owned by business units",
+  "togafDomain": "Data",
+  "fields": [
+    { "name": "id", "type": "string", "required": true, "description": "Unique identifier (dd-* prefix)" },
+    { "name": "name", "type": "string", "required": true, "description": "Display name of the data domain" },
+    { "name": "owningBusinessUnitId", "type": "string", "required": true, "description": "Business unit responsible for this data" },
+    { "name": "description", "type": "string", "required": false, "description": "Scope and contents of the data domain" }
+  ],
+  "relationships": [
+    { "targetCatalog": "BusinessUnits", "type": "ref", "field": "owningBusinessUnitId", "description": "Owning business unit" },
+    { "targetCatalog": "DataEntities", "type": "child", "field": null, "description": "Contains data entities" }
+  ],
+  "tags": ["foundational"]
+}

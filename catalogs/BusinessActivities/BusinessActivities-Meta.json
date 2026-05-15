@@ -1,0 +1,19 @@
+{
+  "catalogName": "BusinessActivities",
+  "description": "Discrete steps within business processes, performed by user groups",
+  "togafDomain": "Business",
+  "fields": [
+    { "name": "id", "type": "string", "required": true, "description": "Unique identifier (ba-* prefix)" },
+    { "name": "name", "type": "string", "required": true, "description": "Display name of the activity" },
+    { "name": "businessProcessId", "type": "string", "required": true, "description": "Business process this activity belongs to" },
+    { "name": "businessUserGroupId", "type": "string", "required": true, "description": "User group that performs this activity" },
+    { "name": "supportedByApplicationComponentIds", "type": "array", "required": false, "description": "Application components supporting this activity" },
+    { "name": "description", "type": "string", "required": false, "description": "What the activity entails" }
+  ],
+  "relationships": [
+    { "targetCatalog": "BusinessProcesses", "type": "ref", "field": "businessProcessId", "description": "Parent business process" },
+    { "targetCatalog": "BusinessUserGroups", "type": "ref", "field": "businessUserGroupId", "description": "Performing user group" },
+    { "targetCatalog": "ApplicationComponents", "type": "refArray", "field": "supportedByApplicationComponentIds", "description": "Supporting application components" }
+  ],
+  "tags": ["business"]
+}

@@ -1,0 +1,44 @@
+[
+  {
+    "id": "bp-001",
+    "name": "Manage Network Assets",
+    "owningBusinessUnitId": "bu-002",
+    "description": "Plan, procure, maintain, and retire physical distribution network assets including poles, transformers, and substations."
+  },
+  {
+    "id": "bp-002",
+    "name": "Process Customer Billing",
+    "owningBusinessUnitId": "bu-006",
+    "description": "Generate invoices, process payments, and manage billing inquiries for customer accounts."
+  },
+  {
+    "id": "bp-003",
+    "name": "Respond to Outages",
+    "owningBusinessUnitId": "bu-001",
+    "description": "Detect, diagnose, dispatch, and restore electrical supply following unplanned outages."
+  },
+  {
+    "id": "bp-004",
+    "name": "Procure & Inventory Materials",
+    "owningBusinessUnitId": "bu-007",
+    "description": "Source, receive, store, and issue materials and equipment required for network operations."
+  },
+  {
+    "id": "bp-005",
+    "name": "Manage Financial Ledger",
+    "owningBusinessUnitId": "bu-003",
+    "description": "Maintain the general ledger, manage accounts payable/receivable, and execute month-end close."
+  },
+  {
+    "id": "bp-006",
+    "name": "Recruit & Onboard Staff",
+    "owningBusinessUnitId": "bu-004",
+    "description": "Manage recruitment, onboarding, payroll processing, and employee record maintenance."
+  },
+  {
+    "id": "bp-007",
+    "name": "Maintain Customer Accounts",
+    "owningBusinessUnitId": "bu-006",
+    "description": "Create and update customer accounts, manage premise details, and handle service requests."
+  }
+]

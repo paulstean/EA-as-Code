@@ -1,0 +1,47 @@
+[
+  {
+    "id": "bug-001",
+    "name": "Field Crew",
+    "description": "Linesmen and technicians who perform physical work on the distribution network."
+  },
+  {
+    "id": "bug-002",
+    "name": "Asset Engineer",
+    "description": "Engineers responsible for asset lifecycle planning, inspections, and maintenance strategies."
+  },
+  {
+    "id": "bug-003",
+    "name": "Network Controller",
+    "description": "Operators who monitor and control the distribution network in real time from the NOC."
+  },
+  {
+    "id": "bug-004",
+    "name": "Customer Service Representative",
+    "description": "Frontline staff handling customer inquiries, account management, and service requests."
+  },
+  {
+    "id": "bug-005",
+    "name": "Finance Analyst",
+    "description": "Finance professionals managing accounts, billing, budgeting, and regulatory reporting."
+  },
+  {
+    "id": "bug-006",
+    "name": "HR Coordinator",
+    "description": "HR staff managing recruitment, onboarding, payroll, and employee records."
+  },
+  {
+    "id": "bug-007",
+    "name": "Warehouse Operator",
+    "description": "Staff managing materials receipt, storage, issuance, and inventory counts."
+  },
+  {
+    "id": "bug-008",
+    "name": "IT Administrator",
+    "description": "System administrators managing Azure, SAP, Dynamics 365, and integration platforms."
+  },
+  {
+    "id": "bug-009",
+    "name": "Executive Leadership",
+    "description": "CEO, CFO, COO, and other C-suite leaders requiring strategic-level access."
+  }
+]

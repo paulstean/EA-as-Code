@@ -1,0 +1,44 @@
+[
+  {
+    "id": "dd-001",
+    "name": "Asset",
+    "owningBusinessUnitId": "bu-002",
+    "description": "Data about physical distribution network assets including poles, transformers, substations, and cables."
+  },
+  {
+    "id": "dd-002",
+    "name": "Customer",
+    "owningBusinessUnitId": "bu-006",
+    "description": "Data about customers including accounts, premises, meters, and service requests."
+  },
+  {
+    "id": "dd-003",
+    "name": "Financial",
+    "owningBusinessUnitId": "bu-003",
+    "description": "Financial data including general ledger, accounts payable and receivable, and regulatory reporting."
+  },
+  {
+    "id": "dd-004",
+    "name": "Employee",
+    "owningBusinessUnitId": "bu-004",
+    "description": "Data about employees including personal records, organisational structure, and payroll."
+  },
+  {
+    "id": "dd-005",
+    "name": "Network Topology",
+    "owningBusinessUnitId": "bu-001",
+    "description": "Data describing the electrical connectivity and topology of the distribution network."
+  },
+  {
+    "id": "dd-006",
+    "name": "Meter Data",
+    "owningBusinessUnitId": "bu-001",
+    "description": "Meter readings, consumption profiles, and interval data from customer meters."
+  },
+  {
+    "id": "dd-007",
+    "name": "Materials & Inventory",
+    "owningBusinessUnitId": "bu-007",
+    "description": "Data about inventory stock items, purchase orders, and warehouse transactions."
+  }
+]

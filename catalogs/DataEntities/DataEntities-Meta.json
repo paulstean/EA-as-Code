@@ -1,0 +1,15 @@
+{
+  "catalogName": "DataEntities",
+  "description": "Logical data entities within data domains",
+  "togafDomain": "Data",
+  "fields": [
+    { "name": "id", "type": "string", "required": true, "description": "Unique identifier (de-* prefix)" },
+    { "name": "name", "type": "string", "required": true, "description": "Display name of the entity" },
+    { "name": "dataDomainId", "type": "string", "required": true, "description": "Parent data domain" },
+    { "name": "description", "type": "string", "required": false, "description": "Definition of the data entity" }
+  ],
+  "relationships": [
+    { "targetCatalog": "DataDomains", "type": "ref", "field": "dataDomainId", "description": "Parent data domain" }
+  ],
+  "tags": ["data"]
+}
