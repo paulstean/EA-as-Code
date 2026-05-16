@@ -180,7 +180,13 @@ header h1{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px
       <input id="searchInput" type="text" placeholder="&#x1F50D; Filter nodes by name or description..." disabled>
     </div>
     <div>
-      <strong style="font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);display:block;margin-bottom:6px">Physics</strong>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <strong style="font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted)">Physics</strong>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+          <span style="font-size:11px;color:var(--text-secondary)">Enabled</span>
+          <input type="checkbox" id="physicsToggle" checked style="accent-color:var(--accent);cursor:pointer">
+        </label>
+      </div>
       <label style="font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:8px">
         <span class="physics-label">Repulsion</span>
         <input type="range" class="physics-slider" id="repulsionSlider" min="10" max="2000" step="10" value="800" style="flex:1" disabled>
@@ -426,7 +432,7 @@ function applyTheme(theme) {
   localStorage.setItem('ea-vis-theme', theme);
   if (state.network) {
     state.network.setOptions({
-      nodes: { font: { color: getComputedStyle(document.documentElement).getPropertyValue('--node-font').trim() } },
+      nodes: { font: { color: '#ffffff' } },
       backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--graph-bg').trim(),
     });
   }
@@ -534,13 +540,13 @@ async function loadFromHandle(handle) {
     renderSidebar();
 
     restoreSearch();
-    repulsionSlider.disabled = false;
-    springSlider.disabled = false;
-    gravitySlider.disabled = false;
-    dampingSlider.disabled = false;
-    springConstSlider.disabled = false;
-    maxVelSlider.disabled = false;
-    curvatureSlider.disabled = false;
+    const physicsEnabled = restorePhysicsEnabled();
+    physicsToggle.checked = physicsEnabled;
+    const sliders = [repulsionSlider, springSlider, gravitySlider, dampingSlider, springConstSlider, maxVelSlider, curvatureSlider];
+    sliders.forEach(s => s.disabled = !physicsEnabled);
+    if (state.network) {
+      state.network.setOptions({ physics: { enabled: physicsEnabled } });
+    }
     searchInput.disabled = false;
     selectAllBar.style.display = 'flex';
     toast.textContent = `Loaded ${state.loadedCatalogNames.length} catalogs from ${handle.name}`;
@@ -627,6 +633,7 @@ function restoreDamping() { return restoreFloat('ea-vis-damping', 0.09, 0, 1); }
 function restoreSpringConst() { return restoreFloat('ea-vis-spring-const', 0.01, 0.001, 0.1); }
 function restoreMaxVel() { return restoreInt('ea-vis-max-vel', 15, 1, 50); }
 function restoreCurvature() { return restoreFloat('ea-vis-curvature', 0.1, 0, 1); }
+function restorePhysicsEnabled() { return localStorage.getItem('ea-vis-physics') !== '0'; }
 
 function restoreVisibleEntries() {
   const visible = localStorage.getItem('ea-vis-visible');
@@ -684,6 +691,7 @@ async function saveStateToJSON() {
     expandedCatalogs: [...state.expandedCatalogs],
     searchTerm: state.searchTerm,
     physics: {
+      enabled: physicsToggle.checked,
       repulsion: parseInt(repulsionSlider.value),
       spring: parseInt(springSlider.value),
       gravity: parseFloat(gravitySlider.value),
@@ -732,6 +740,11 @@ async function loadStateFromJSON() {
       return;
     }
     if (obj.physics) {
+      if (obj.physics.enabled !== undefined) {
+        physicsToggle.checked = obj.physics.enabled;
+        const sliders = [repulsionSlider, springSlider, gravitySlider, dampingSlider, springConstSlider, maxVelSlider, curvatureSlider];
+        sliders.forEach(s => s.disabled = !obj.physics.enabled);
+      }
       if (obj.physics.repulsion !== undefined) repulsionSlider.value = obj.physics.repulsion;
       if (obj.physics.spring !== undefined) springSlider.value = obj.physics.spring;
       if (obj.physics.gravity !== undefined) gravitySlider.value = obj.physics.gravity;
@@ -742,6 +755,7 @@ async function loadStateFromJSON() {
       if (state.network) {
         state.network.setOptions({
           physics: {
+            enabled: obj.physics.enabled !== undefined ? obj.physics.enabled : true,
             barnesHut: {
               gravitationalConstant: -parseInt(repulsionSlider.value),
               springLength: parseInt(springSlider.value),
@@ -841,13 +855,13 @@ function initGraph() {
     groups[cat] = {
       shape: 'box',
       color: {
-        background: hexAlpha(color, 0.15),
+        background: hexAlpha(color, 1),
         border: color,
-        highlight: { background: hexAlpha(color, 0.3), border: color },
+        highlight: { background: hexAlpha(color, 1), border: color },
       },
       borderWidth: 2,
       borderWidthSelected: 3,
-      font: { size: 11, face: 'Segoe UI, sans-serif' },
+      font: { size: 11, face: 'Segoe UI, sans-serif', multi: true },
       shadow: { enabled: true },
       margin: { top: 6, right: 10, bottom: 6, left: 10 },
     };
@@ -864,10 +878,12 @@ function initGraph() {
   const options = {
     groups,
     nodes: {
-      font: { color: getComputedStyle(document.documentElement).getPropertyValue('--node-font').trim(), size: 13 },
+      zIndex: 1,
+      font: { color: '#ffffff', size: 13 },
       margin: { top: 8, right: 14, bottom: 8, left: 14 },
     },
     edges: {
+      zIndex: 0,
       arrows: { to: { enabled: true, scaleFactor: 0.8 } },
       width: 1.5,
       smooth: { type: 'curvedCW', roundness: curvature },
@@ -907,19 +923,19 @@ function initGraph() {
       const cat = state.entryMap[id]?.catalog;
       if (!cat) continue;
       const color = CATALOG_COLORS[cat] || '#888';
-      state.nodes.update({ id, color: { background: hexAlpha(color, 0.04), border: hexAlpha(color, 0.3) } });
+      state.nodes.update({ id, color: { background: hexAlpha(color, 1), border: hexAlpha(color, 0.3) } });
     }
     for (const id of connectedNodes) {
       const cat = state.entryMap[id]?.catalog;
       if (!cat) continue;
       const color = CATALOG_COLORS[cat] || '#888';
-      state.nodes.update({ id, color: { background: hexAlpha(color, 0.3), border: color } });
+      state.nodes.update({ id, color: { background: hexAlpha(color, 1), border: color } });
     }
     // Highlight the hovered node
     const hcat = state.entryMap[params.node]?.catalog;
     if (hcat) {
       const hcolor = CATALOG_COLORS[hcat] || '#888';
-      state.nodes.update({ id: params.node, color: { background: hexAlpha(hcolor, 0.4), border: hcolor } });
+      state.nodes.update({ id: params.node, color: { background: hexAlpha(hcolor, 1), border: hcolor } });
     }
     if (popoverMode.value === 'hover') {
       const evt = params.event;
@@ -962,7 +978,7 @@ function addEntryToGraph(entryId) {
   const pos = state.flowPositions[entryId];
   state.nodes.add({
     id: entry.id,
-    label: '[' + toTitle(catalog) + ']\n' + entry.name,
+    label: `['${toTitle(catalog).replace(/'/g, "\\'")}']\n<b>${entry.name.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</b>`,
     group: catalog,
     x: pos?.x,
     y: pos?.y,
@@ -989,7 +1005,7 @@ function addCatalogAllToGraph(catalog) {
     const pos = state.flowPositions[entry.id];
     batch.push({
       id: entry.id,
-      label: '[' + toTitle(catalog) + ']\n' + entry.name,
+      label: `['${toTitle(catalog).replace(/'/g, "\\'")}']\n<b>${entry.name.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</b>`,
       group: catalog,
       x: pos?.x,
       y: pos?.y,
@@ -1218,8 +1234,8 @@ function updateNodeColors() {
     state.nodes.update({
       id: node.id,
       color: {
-        background: isDimmed ? hexAlpha(color, 0.03) : hexAlpha(color, 0.15),
-        border: isDimmed ? hexAlpha(color, 0.2) : color,
+        background: isDimmed ? hexAlpha(color, 0.5) : hexAlpha(color, 1),
+        border: isDimmed ? hexAlpha(color, 0.4) : color,
       },
     });
   }
@@ -1513,6 +1529,16 @@ graphEl.addEventListener('contextmenu', function(e) {
   if (!nodeId) return;
   clearTimeout(popoverHideTimer);
   showRelationPopover(nodeId, e.clientX, e.clientY);
+});
+
+physicsToggle.addEventListener('change', function() {
+  const enabled = this.checked;
+  localStorage.setItem('ea-vis-physics', enabled ? '1' : '0');
+  const sliders = [repulsionSlider, springSlider, gravitySlider, dampingSlider, springConstSlider, maxVelSlider, curvatureSlider];
+  sliders.forEach(s => s.disabled = !enabled);
+  if (state.network) {
+    state.network.setOptions({ physics: { enabled } });
+  }
 });
 
 repulsionSlider.addEventListener('input', function() {
