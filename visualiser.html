@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html data-theme="dark">
+<html data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -595,7 +595,7 @@ function toggleTheme() {
 }
 
 const savedTheme = localStorage.getItem('ea-vis-theme');
-applyTheme(savedTheme || 'dark');
+applyTheme(savedTheme || 'light');
 themeToggle.addEventListener('click', toggleTheme);
 
 // ─── Utility ──────────────────────────────────────────────────
