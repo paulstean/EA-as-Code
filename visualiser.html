@@ -370,7 +370,8 @@ header h1{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px
     <div class="chat-header">
       <span class="chat-title">AI Chat</span>
       <select id="modelSelect" title="Select Ollama model"></select>
-      <button class="chat-save" id="chatSaveBtn" title="Save chat as Markdown">&#128464;</button>
+      <button class="chat-save" id="chatSaveBtn" title="Save chat as Markdown">MD</button>
+      <button class="chat-save" id="chatSaveHtmlBtn" title="Save chat as HTML">HT</button>
       <span class="chat-status checking" id="chatStatus" title="Checking connection...">&#9679;</span>
       <button class="chat-toggle" id="chatToggle" title="Toggle chat panel">&times;</button>
     </div>
@@ -2781,6 +2782,8 @@ const chatSendBtn = document.getElementById('chatSendBtn');
 const chatToggle = document.getElementById('chatToggle');
 const chatStatus = document.getElementById('chatStatus');
 const modelSelect = document.getElementById('modelSelect');
+const chatSaveBtn = document.getElementById('chatSaveBtn');
+const chatSaveHtmlBtn = document.getElementById('chatSaveHtmlBtn');
 
 async function checkChatServer() {
   chatStatus.className = 'checking';
@@ -3017,6 +3020,7 @@ chatToggle.addEventListener('click', function() {
 });
 
 chatSaveBtn.addEventListener('click', saveChatLog);
+chatSaveHtmlBtn.addEventListener('click', saveChatLogHTML);
 
 setTimeout(checkChatServer, 1500);
 
@@ -3042,6 +3046,32 @@ function saveChatLog() {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+function saveChatLogHTML() {
+  if (chatMessages.length === 0) return;
+  var now = new Date();
+  var ts = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0') + '-' + String(now.getHours()).padStart(2, '0') + String(now.getMinutes()).padStart(2, '0') + String(now.getSeconds()).padStart(2, '0');
+  var msgsHtml = '';
+  for (var i = 0; i < chatMessages.length; i++) {
+    var m = chatMessages[i];
+    var content = m.role === 'assistant' ? renderMarkdown(m.content) : escHtml(m.content).replace(/\n/g, '<br>');
+    msgsHtml += '<div class="chat-msg ' + m.role + '">' + content + '</div>\n';
+  }
+  var html = '<!DOCTYPE html>\n<html>\n<head>\n<meta charset="utf-8">\n<title>EA Chat Log</title>\n<style>\nbody{font-family:Segoe UI,sans-serif;background:#1a1a2e;color:#e8e8e8;padding:24px;max-width:800px;margin:0 auto}\nh1{color:#4fc3f7;margin-bottom:4px}\n.meta{color:#8899b4;font-size:13px;margin-bottom:16px}\n.chat-msg{max-width:85%;padding:8px 12px;border-radius:8px;font-size:13px;line-height:1.5;margin-bottom:8px}\n.chat-msg.user{background:#4fc3f7;color:#1a1a2e;align-self:flex-end;margin-left:auto}\n.chat-msg.assistant{background:#0f3460;color:#e8e8e8;border:1px solid #2a2a4a;align-self:flex-start}\n.chat-msg strong{color:#4fc3f7}\n.chat-msg code{background:#1a1a2e;padding:1px 4px;border-radius:3px;font-size:12px;font-family:monospace;color:#4fc3f7}\n.chat-msg pre{background:#1a1a2e;border:1px solid #2a2a4a;border-radius:4px;padding:8px 10px;overflow-x:auto;font-size:12px;line-height:1.4}\n.chat-msg pre code{background:none;padding:0;color:#e8e8e8}\n.chat-msg ul,.chat-msg ol{margin:4px 0;padding-left:18px}\n.chat-msg li{margin:2px 0}\n.chat-msg p{margin:4px 0}\n.chat-msg hr{border:none;border-top:1px solid #2a2a4a;margin:8px 0}\n.chat-msg table{border-collapse:collapse;margin:6px 0;font-size:12px;width:auto;overflow-x:auto}\n.chat-msg table th,.chat-msg table td{border:1px solid #2a2a4a;padding:4px 8px;text-align:left}\n.chat-msg table th{background:#1a1a2e;font-weight:600;color:#4fc3f7}\n.chat-msg table tr:nth-child(even) td{background:rgba(0,0,0,0.15)}\n</style>\n</head>\n<body>\n<h1>EA Chat Log</h1>\n<p class="meta"><strong>Date:</strong> ' + now.toLocaleString() + ' &nbsp;|&nbsp; <strong>Model:</strong> ' + escHtml(chatModel) + '</p>\n<div style="display:flex;flex-direction:column;gap:8px">' + msgsHtml + '</div>\n</body>\n</html>';
+  var blob = new Blob([html], { type: 'text/html' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'ea-chat-' + ts + '.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function escHtml(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 </script>
 </body>
