@@ -1721,13 +1721,14 @@ function positionTextBox(el, box) {
   el.style.top = domPos.y + 'px';
   el.style.width = (box.width * scale) + 'px';
   el.style.height = (box.height * scale) + 'px';
+  el.style.fontSize = (13 * scale) + 'px';
 }
 
 function updateTextBoxPositions() {
   if (!state.network) return;
   for (var i = 0; i < state.textBoxes.length; i++) {
     var el = document.getElementById(state.textBoxes[i].id);
-    if (el) positionTextBox(el, state.textBoxes[i]);
+    if (el) { positionTextBox(el, state.textBoxes[i]); growTextBox(el, state.textBoxes[i]); }
   }
 }
 
