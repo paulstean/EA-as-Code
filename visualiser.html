@@ -1454,7 +1454,7 @@ function initGraph() {
     }
   });
 
-  state.network.on('viewChanged', function() {
+  state.network.on('afterDrawing', function() {
     updateTextBoxPositions();
   });
 
