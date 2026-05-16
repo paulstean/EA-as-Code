@@ -263,7 +263,20 @@ header h1{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px
 #chatSendBtn{background:var(--accent);border:none;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:14px;color:var(--bg-primary);transition:opacity 0.15s;flex-shrink:0;align-self:flex-end}
 #chatSendBtn:hover{opacity:0.85}
 #chatSendBtn:disabled{opacity:0.4;cursor:not-allowed}
-.chat-msg.assistant.chat-error{color:var(--error) !important;border-color:var(--error) !important}
+.chat-msg.assistant.chat-error{color:var(--error)!important;border-color:var(--error)!important}
+.chat-cmd-request{background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;padding:10px 12px;margin-top:8px}
+.chat-cmd-request .cmd-summary{font-weight:600;color:var(--accent);margin-bottom:6px;font-size:13px}
+.chat-cmd-request .cmd-targets{font-size:12px;color:var(--text-secondary);margin-bottom:10px;max-height:120px;overflow-y:auto}
+.chat-cmd-request .cmd-targets li{margin:2px 0}
+.chat-cmd-request .cmd-targets li span.dim{color:var(--text-muted);font-size:11px}
+.chat-cmd-request .cmd-actions{display:flex;gap:8px}
+.chat-cmd-request .cmd-btn{flex:1;padding:6px 10px;border-radius:4px;border:1px solid var(--border);font-size:12px;cursor:pointer;transition:all 0.12s;font-family:inherit}
+.chat-cmd-request .cmd-btn-yes{background:var(--accent);color:var(--bg-primary);border-color:var(--accent)}
+.chat-cmd-request .cmd-btn-yes:hover{opacity:0.85}
+.chat-cmd-request .cmd-btn-no{background:transparent;color:var(--text-secondary)}
+.chat-cmd-request .cmd-btn-no:hover{background:var(--hover-highlight);color:var(--text-primary)}
+.chat-cmd-request .cmd-btn:disabled{opacity:0.5;cursor:not-allowed}
+.chat-cmd-request .cmd-status{font-size:12px;color:var(--text-muted);font-style:italic;margin-top:6px;text-align:center}
 </style>
 </head>
 <body>
@@ -493,6 +506,7 @@ const state = {
   activeTabId: null,
   tabLoadGuard: false,
   textBoxes: [],
+  pendingCmd: null,  // stores {action, catalog, targets} from cmd_request event
 };
 
 // ─── IndexedDB helpers ────────────────────────────────────────
@@ -2888,6 +2902,94 @@ function appendStreamToken(token) {
   }
   lastMsg.innerHTML = renderMarkdown(streamContent);
   scrollChat();
+
+  if (!state.pendingCmd && streamContent.length > 50) {
+    detectApprovalRequest(streamContent, lastMsg);
+  }
+}
+
+function detectApprovalRequest(content, msgEl) {
+  var hasApproval = /approve|reject|yes,? (add|remove)/i.test(content);
+  var hasEntityList = /\bde-\d+\b|\bapp-\d+\b|\bflow-\d+\b|\bbp-\d+\b|\bbug-\d+\b|\bbu-\d+\b|\bdd-\d+\b|\binfra-\d+\b|\bts-\d+\b|\bperm-\d+\b/.test(content);
+  var isMarkdown = /\*\*|##|###|```/.test(content);
+
+  if (hasApproval && hasEntityList && isMarkdown) {
+    var targets = [];
+    var idRegex = /\b(de-\d+|app-\d+|flow-\d+|bp-\d+|bug-\d+|bu-\d+|dd-\d+|infra-\d+|ts-\d+|perm-\d+)\b/g;
+    var match;
+    while ((match = idRegex.exec(content)) !== null) {
+      if (targets.indexOf(match[0]) === -1) targets.push(match[0]);
+    }
+
+    if (targets.length > 0 && !msgEl.querySelector('.chat-cmd-request')) {
+      var isRemoval = /remove|delete|clear/i.test(content);
+      var action = isRemoval ? 'remove' : 'add';
+      var catalog = inferCatalog(targets[0]);
+      state.pendingCmd = { action: action, catalog: catalog, targets: targets };
+      renderApprovalBlock(msgEl, action, catalog, targets);
+    }
+  }
+}
+
+function inferCatalog(id) {
+  var prefix = id.replace(/-\d+$/, '');
+  var map = {
+    'de': 'DataEntities', 'app': 'ApplicationComponents', 'flow': 'InformationFlows',
+    'bp': 'BusinessProcesses', 'bug': 'BusinessUserGroups', 'bu': 'BusinessUnits',
+    'dd': 'DataDomains', 'infra': 'InfrastructureComponents', 'ts': 'TechnologyStandards',
+    'perm': 'Permissions',
+  };
+  return map[prefix] || 'Entries';
+}
+
+function renderApprovalBlock(msgEl, action, catalog, targets) {
+  var n = targets.length;
+  var actionLabel = action === 'add' ? 'Add ' + n + ' ' + catalog : 'Remove ' + n + ' ' + catalog;
+
+  var targetsHtml = '<ul style="margin:0;padding-left:18px">';
+  for (var i = 0; i < targets.length; i++) {
+    var id = targets[i];
+    var data2 = state.entryMap[id];
+    var name = data2 ? data2.entry.name : id;
+    targetsHtml += '<li>' + escHtml(name) + ' <span class="dim">(' + escHtml(id) + ')</span></li>';
+  }
+  targetsHtml += '</ul>';
+
+  var block = document.createElement('div');
+  block.className = 'chat-cmd-request';
+  block.innerHTML = '<div class="cmd-summary">' + escHtml(actionLabel) + '</div>' +
+    '<div class="cmd-targets">' + targetsHtml + '</div>' +
+    '<div class="cmd-actions">' +
+    '<button class="cmd-btn cmd-btn-yes" id="cmdYesBtn">Yes, ' + (action === 'add' ? 'add' : 'remove') + '</button>' +
+    '<button class="cmd-btn cmd-btn-no" id="cmdNoBtn">Cancel</button>' +
+    '</div>';
+
+  msgEl.appendChild(block);
+  scrollChat();
+
+  block.querySelector('#cmdYesBtn').addEventListener('click', function() {
+    var btns = block.querySelectorAll('.cmd-btn');
+    for (var j = 0; j < btns.length; j++) btns[j].disabled = true;
+    var status = document.createElement('div');
+    status.className = 'cmd-status';
+    status.textContent = 'Applying...';
+    block.querySelector('.cmd-actions').replaceWith(status);
+
+    state.pendingCmd = null;
+    sendApprovalMessage('[[APPROVE:CMD_REQUEST: ' + action + '|' + catalog + '|' + targets.join(',') + ']]');
+  });
+
+  block.querySelector('#cmdNoBtn').addEventListener('click', function() {
+    var btns = block.querySelectorAll('.cmd-btn');
+    for (var j = 0; j < btns.length; j++) btns[j].disabled = true;
+    var status = document.createElement('div');
+    status.className = 'cmd-status';
+    status.textContent = 'Cancelled';
+    block.querySelector('.cmd-actions').replaceWith(status);
+
+    sendApprovalMessage('[[REJECT:CMD_REQUEST]]');
+    state.pendingCmd = null;
+  });
 }
 
 function showTyping() {
@@ -2976,6 +3078,12 @@ async function sendChatMessage() {
             errDiv.textContent = 'Error: ' + data.message;
             chatMessagesEl.appendChild(errDiv);
             scrollChat();
+          } else if (data.type === 'cmd_request') {
+            hideTyping();
+            handleCmdRequest(data);
+          } else if (data.type === 'command') {
+            hideTyping();
+            executeCommand(data.action, data.target);
           }
         } catch (_) {}
       }
@@ -3072,6 +3180,156 @@ function saveChatLogHTML() {
 
 function escHtml(str) {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function handleCmdRequest(data) {
+  var action = data.action;
+  var catalog = data.catalog;
+  var targets = data.targets;
+  if (!targets || !targets.length) return;
+
+  state.pendingCmd = { action: action, catalog: catalog, targets: targets };
+
+  var lastMsg = chatMessagesEl.querySelector('.chat-msg.assistant:last-child');
+  if (!lastMsg) return;
+
+  var n = targets.length;
+  var actionLabel = action === 'add' ? 'Add ' + n + ' ' + catalog : 'Remove ' + n + ' ' + catalog;
+
+  var targetsHtml = '<ul style="margin:0;padding-left:18px">';
+  for (var i = 0; i < targets.length; i++) {
+    var id = targets[i];
+    var data2 = state.entryMap[id];
+    var name = data2 ? data2.entry.name : id;
+    targetsHtml += '<li>' + escHtml(name) + ' <span class="dim">(' + escHtml(id) + ')</span></li>';
+  }
+  targetsHtml += '</ul>';
+
+  var block = document.createElement('div');
+  block.className = 'chat-cmd-request';
+  block.innerHTML = '<div class="cmd-summary">' + escHtml(actionLabel) + '</div>' +
+    '<div class="cmd-targets">' + targetsHtml + '</div>' +
+    '<div class="cmd-actions">' +
+    '<button class="cmd-btn cmd-btn-yes" id="cmdYesBtn">Yes, ' + (action === 'add' ? 'add' : 'remove') + '</button>' +
+    '<button class="cmd-btn cmd-btn-no" id="cmdNoBtn">Cancel</button>' +
+    '</div>';
+
+  lastMsg.appendChild(block);
+  scrollChat();
+
+  block.querySelector('#cmdYesBtn').addEventListener('click', function() {
+    var btns = block.querySelectorAll('.cmd-btn');
+    for (var j = 0; j < btns.length; j++) btns[j].disabled = true;
+    var status = document.createElement('div');
+    status.className = 'cmd-status';
+    status.textContent = 'Applying...';
+    block.querySelector('.cmd-actions').replaceWith(status);
+
+    var approveMsg = '[[APPROVE:CMD_REQUEST: ' + action + '|' + catalog + '|' + targets.join(',') + ']]';
+    state.pendingCmd = null;
+    sendDirectChatMessage(approveMsg);
+  });
+
+  block.querySelector('#cmdNoBtn').addEventListener('click', function() {
+    var btns = block.querySelectorAll('.cmd-btn');
+    for (var j = 0; j < btns.length; j++) btns[j].disabled = true;
+    var status = document.createElement('div');
+    status.className = 'cmd-status';
+    status.textContent = 'Cancelled';
+    block.querySelector('.cmd-actions').replaceWith(status);
+
+    sendDirectChatMessage('[[REJECT:CMD_REQUEST]]');
+    state.pendingCmd = null;
+  });
+}
+
+function executeCommand(action, target) {
+  if (action === 'add') {
+    addEntryToGraph(target);
+    var cb = document.querySelector('input[data-id="' + target + '"]');
+    if (cb) cb.checked = true;
+    updateSidebarCountsForEntry(target, 'add');
+  } else if (action === 'remove') {
+    removeEntryFromGraph(target);
+    var cb = document.querySelector('input[data-id="' + target + '"]');
+    if (cb) cb.checked = false;
+    updateSidebarCountsForEntry(target, 'remove');
+  }
+}
+
+function updateSidebarCountsForEntry(entryId, action) {
+  var data = state.entryMap[entryId];
+  if (!data) return;
+  var catalog = data.catalog;
+  var group = catalogList.querySelector('.cat-group[data-catalog="' + catalog + '"]');
+  if (!group) return;
+  var entries = state.entries[catalog] || [];
+  var total = entries.length;
+  var selected = entries.filter(function(e) { return state.visibleEntries.has(e.id); }).length;
+  group.querySelector('.cat-count').textContent = selected + '/' + total;
+  var master = group.querySelector('.cat-master');
+  if (master) master.checked = selected === total && total > 0;
+}
+
+function sendDirectChatMessage(text) {
+  var div = document.createElement('div');
+  div.className = 'chat-msg user';
+  div.textContent = text;
+  chatMessagesEl.appendChild(div);
+  scrollChat();
+
+  if (text.startsWith('[[APPROVE:CMD_REQUEST:') || text === '[[REJECT:CMD_REQUEST]]') {
+    sendApprovalMessage(text);
+  }
+}
+
+async function sendApprovalMessage(text) {
+  var body = JSON.stringify({
+    messages: chatMessages.map(function(m) { return { role: m.role, content: m.content }; }),
+    model: chatModel,
+  });
+
+  try {
+    var resp = await fetch(CHAT_SERVER + '/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: body,
+    });
+
+    if (!resp.ok) return;
+
+    var reader = resp.body.getReader();
+    var decoder = new TextDecoder();
+    var buffer = '';
+
+    while (true) {
+      var result = await reader.read();
+      if (result.done) break;
+
+      buffer += decoder.decode(result.value, { stream: true });
+      var lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (var i = 0; i < lines.length; i++) {
+        var line = lines[i].trim();
+        if (line.indexOf('data: ') !== 0) continue;
+
+        try {
+          var data = JSON.parse(line.slice(6));
+          if (data.type === 'command') {
+            executeCommand(data.action, data.target);
+          } else if (data.type === 'done' || data.type === 'error') {
+            var lastMsg = chatMessagesEl.querySelector('.chat-msg.assistant:last-child');
+            if (lastMsg && data.type === 'done') {
+              var status = lastMsg.querySelector('.cmd-status');
+              if (status) status.textContent = 'Done.';
+            }
+            return;
+          }
+        } catch (_) {}
+      }
+    }
+  } catch (err) {}
 }
 </script>
 </body>

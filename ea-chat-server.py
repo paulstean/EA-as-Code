@@ -166,13 +166,35 @@ def build_system_prompt():
 
         I will detect these markers, retrieve the data, and show it to you. Then you can continue your analysis.
 
+        DIAGRAM CONTROL — TWO-STEP COMMAND FLOW:
+        You can propose adding or removing entries from the diagram. This requires TWO steps:
+
+        STEP 1 — PROPOSE: When you want to modify the diagram, output a CMD_REQUEST marker:
+        [[CMD_REQUEST: <action>|<catalog>|<id1,id2,...>]]
+
+        Where:
+        - action = "add" or "remove"
+        - catalog = a human-readable name for the catalog (e.g. "InformationFlows")
+        - id1,id2,... = comma-separated entry IDs to add or remove
+
+        Example: [[CMD_REQUEST: add|InformationFlows|flow-001,flow-002,flow-012]]
+        Example: [[CMD_REQUEST: remove|InformationFlows|flow-003,flow-007]]
+
+        The browser will show the proposed changes with Yes/No buttons for user confirmation.
+
+        IMPORTANT: You must FIRST read the relevant catalogs to find the correct entry IDs before using CMD_REQUEST. Do NOT guess IDs.
+
+        STEP 2 — EXECUTE: After the user approves, I will send you an approval message. Then produce a brief confirmation (e.g. "Adding 5 Information Flows to the diagram...").
+
         CRITICAL RULES:
         1. Only answer based on data you have read. Do NOT guess.
-        2. You are read-only. Do NOT suggest modifications.
+        2. You are read-only. Do NOT suggest modifications except via CMD_REQUEST.
         3. Cross-reference between catalogs using IDs.
         4. Cite specific entries by name and ID when relevant.
         5. To find common data entities between two applications: first read the ApplicationComponents and InformationFlows catalogs to see which flows connect them and what data entities they carry. Also read the DataEntities catalog to understand what each entity is.
         6. Always request the data you need using [[READ:]], then analyze it.
+        7. Always explain what you found (names, IDs) before using CMD_REQUEST so the user knows what they are approving.
+        8. For removals, first list the currently-visible entries you propose to remove.
     """)
 
 
@@ -198,13 +220,85 @@ def handle_text_tool(marker):
     return (False, "")
 
 
-def process_text_tools(text):
-    """Process any [[...]] markers in a text. Returns (cleaned_text, should_loop)."""
+def handle_cmd_request_marker(marker):
+    """Detect [[CMD_REQUEST: action|catalog|id1,id2,...]] markers. Returns (found, action, catalog, targets_list)."""
+    if not marker.startswith("[[CMD_REQUEST:"):
+        return (False, None, None, None)
+    inner = marker[len("[[CMD_REQUEST:"):].rstrip("]").strip()
+    parts = inner.split("|")
+    if len(parts) != 3:
+        return (True, None, None, None)  # malformed
+    action = parts[0].strip()
+    catalog = parts[1].strip()
+    targets_str = parts[2].strip()
+    if not targets_str:
+        return (True, None, None, None)  # no targets
+    targets = [t.strip() for t in targets_str.split(",") if t.strip()]
+    if not targets:
+        return (True, None, None, None)
+    return (True, action, catalog, targets)
+
+
+def handle_approve_marker(marker):
+    """Detect [[APPROVE:CMD_REQUEST: ...]] markers. Returns (found, full_marker_string)."""
+    if marker.startswith("[[APPROVE:CMD_REQUEST:") and marker.endswith("]]"):
+        return (True, marker)
+    return (False, "")
+
+
+def handle_reject_marker(marker):
+    """Detect [[REJECT:CMD_REQUEST]] marker. Returns (found, True)."""
+    if marker.strip() == "[[REJECT:CMD_REQUEST]]":
+        return (True, True)
+    return (False, False)
+
+
+def process_text_tools(text, pending_cmd=None):
+    """Process any [[...]] markers in a text. Returns (cleaned_text, should_loop, cmd_request_data, is_approve, is_reject).
+
+    cmd_request_data: None or {"action": str, "catalog": str, "targets": [str]}
+    is_approve: True if this is an APPROVE:CMD_REQUEST marker
+    is_reject: True if this is a REJECT:CMD_REQUEST marker
+    """
     lines = text.split("\n")
     new_lines = []
     should_loop = False
+    cmd_request_data = None
+    is_approve = False
+    is_reject = False
+
     for line in lines:
         stripped = line.strip()
+
+        # Check for command request
+        found, action, catalog, targets = handle_cmd_request_marker(stripped)
+        if found:
+            if action is None:
+                new_lines.append("[Error: malformed CMD_REQUEST — provide action|catalog|id1,id2,...]")
+                should_loop = True
+            else:
+                cmd_request_data = {"action": action, "catalog": catalog, "targets": targets}
+                new_lines.append("[Processing command request...]")
+                should_loop = True
+            continue
+
+        # Check for approval
+        found, _ = handle_approve_marker(stripped)
+        if found:
+            is_approve = True
+            new_lines.append("[Command approved — applying...]")
+            should_loop = True
+            continue
+
+        # Check for rejection
+        found, _ = handle_reject_marker(stripped)
+        if found:
+            is_reject = True
+            new_lines.append("[Command cancelled]")
+            should_loop = True
+            continue
+
+        # Existing text tools
         found, response = handle_text_tool(stripped)
         if found:
             should_loop = True
@@ -212,7 +306,14 @@ def process_text_tools(text):
             new_lines.append(response)
         else:
             new_lines.append(line)
-    return "\n".join(new_lines), should_loop
+
+    return (
+        "\n".join(new_lines),
+        should_loop,
+        cmd_request_data,
+        is_approve,
+        is_reject,
+    )
 
 
 # ─── Ollama API ───────────────────────────────────────────────
@@ -247,15 +348,37 @@ def stream_ollama_lines(resp):
             continue
 
 
+def parse_approve_marker(marker):
+    """Parse [[APPROVE:CMD_REQUEST: action|catalog|targets]] and return (action, catalog, targets_list)."""
+    if not marker.startswith("[[APPROVE:CMD_REQUEST:") or not marker.endswith("]]"):
+        return (None, None, None)
+    inner = marker[len("[[APPROVE:CMD_REQUEST:"):].rstrip("]").strip()
+    parts = inner.split("|")
+    if len(parts) != 3:
+        return (None, None, None)
+    action = parts[0].strip()
+    catalog = parts[1].strip()
+    targets_str = parts[2].strip()
+    if not targets_str:
+        return (None, None, None)
+    targets = [t.strip() for t in targets_str.split(",") if t.strip()]
+    if not targets:
+        return (None, None, None)
+    return (action, catalog, targets)
+
+
 def chat_loop(messages):
     """
     Run the chat with text-based tool protocol.
     Yields (event_type, data) tuples:
       - ("token", str) — text token
+      - ("cmd_request", dict) — command confirmation request to browser
+      - ("command", dict) — single command to execute
       - ("done", None) — finished
       - ("error", str) — error message
     """
     max_rounds = 10
+
     for _ in range(max_rounds):
         try:
             resp = call_ollama(messages, stream=True)
@@ -285,8 +408,83 @@ def chat_loop(messages):
             yield ("error", f"Stream error: {str(e)}")
             return
 
-        # Check for text-based tool markers
-        processed, should_loop = process_text_tools(full_content)
+        # Check for markers — detect approval BEFORE process_text_tools rewrites it
+        approval_raw = None
+        is_approve_early = False
+        for line in full_content.split("\n"):
+            stripped = line.strip()
+            if stripped.startswith("[[APPROVE:CMD_REQUEST:") and stripped.endswith("]]"):
+                approval_raw = stripped
+                is_approve_early = True
+                break
+
+        # Check for rejection BEFORE process_text_tools
+        is_reject_early = False
+        for line in full_content.split("\n"):
+            if line.strip() == "[[REJECT:CMD_REQUEST]]":
+                is_reject_early = True
+                break
+
+        # Check for cmd_request BEFORE process_text_tools
+        cmd_request_raw = None
+        for line in full_content.split("\n"):
+            if line.strip().startswith("[[CMD_REQUEST:"):
+                cmd_request_raw = line.strip()
+                break
+
+        # Check for other text tools
+        has_other_tool = any(
+            line.strip().startswith("[[READ:") or
+            line.strip().startswith("[[GET:") or
+            line.strip().startswith("[[SEARCH:")
+            for line in full_content.split("\n")
+        )
+
+        processed, should_loop, cmd_request_data, _, _ = process_text_tools(full_content)
+
+        if is_reject_early:
+            messages.append({"role": "assistant", "content": processed})
+            messages.append({
+                "role": "user",
+                "content": "Acknowledge the cancellation."
+            })
+            continue
+
+        if cmd_request_raw is not None and cmd_request_data is not None:
+            # Command request — emit to browser, don't add to messages yet
+            messages.append({"role": "assistant", "content": processed})
+            yield ("cmd_request", cmd_request_data)
+            messages.append({
+                "role": "user",
+                "content": "Continue. Based on the data above, confirm what you found and ask the user to approve or reject."
+            })
+            continue
+
+        if is_approve_early and approval_raw:
+            action, catalog, targets = parse_approve_marker(approval_raw)
+            if targets:
+                messages.append({"role": "assistant", "content": processed})
+                for target in targets:
+                    yield ("command", {"action": action, "target": target})
+                messages.append({
+                    "role": "user",
+                    "content": "Acknowledge the command has been applied."
+                })
+                continue
+            # Fallback: malformed approval
+            messages.append({"role": "assistant", "content": processed})
+            yield ("token", "[Error: Could not parse approval — please try again]")
+            messages.append({"role": "user", "content": "Continue."})
+            continue
+
+        if is_reject_early:
+            messages.append({"role": "assistant", "content": processed})
+            messages.append({
+                "role": "user",
+                "content": "Acknowledge the cancellation."
+            })
+            continue
+
         if should_loop:
             messages.append({"role": "assistant", "content": processed})
             messages.append({
@@ -393,6 +591,10 @@ class ChatHandler(BaseHTTPRequestHandler):
         for event_type, data in chat_loop(messages):
             if event_type == "token":
                 self._sse_send({"type": "token", "content": data})
+            elif event_type == "cmd_request":
+                self._sse_send({"type": "cmd_request", "action": data["action"], "catalog": data["catalog"], "targets": data["targets"]})
+            elif event_type == "command":
+                self._sse_send({"type": "command", "action": data["action"], "target": data["target"]})
             elif event_type == "done":
                 self._sse_send({"type": "done"})
                 break
