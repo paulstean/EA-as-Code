@@ -237,6 +237,7 @@ header h1{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px
 @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 .chat-msg.user{align-self:flex-end;background:var(--accent);color:var(--bg-primary);border-bottom-right-radius:2px}
 .chat-msg.assistant{align-self:flex-start;background:var(--bg-card);color:var(--text-primary);border-bottom-left-radius:2px;border:1px solid var(--border)}
+.chat-msg-content{min-width:0}
 .chat-msg.assistant strong{color:var(--accent)}
 .chat-msg.assistant code{background:var(--bg-primary);padding:1px 4px;border-radius:3px;font-size:12px;font-family:monospace;color:var(--accent)}
 .chat-msg.assistant pre{background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;padding:8px 10px;overflow-x:auto;margin:6px 0;font-size:12px;line-height:1.4}
@@ -2788,6 +2789,7 @@ const CHAT_SERVER = 'http://localhost:8765';
 let chatModel = 'qwen3.5:latest';
 const chatMessages = [];
 let isStreaming = false;
+let pendingFollowUpText = null;
 
 const chatPanel = document.getElementById('chatPanel');
 const chatMessagesEl = document.getElementById('chatMessages');
@@ -2900,97 +2902,20 @@ function appendStreamToken(token) {
     lastMsg.className = 'chat-msg assistant';
     chatMessagesEl.appendChild(lastMsg);
   }
-  lastMsg.innerHTML = renderMarkdown(streamContent);
-  scrollChat();
-
-  if (!state.pendingCmd && streamContent.length > 50) {
-    detectApprovalRequest(streamContent, lastMsg);
-  }
-}
-
-function detectApprovalRequest(content, msgEl) {
-  var hasApproval = /approve|reject|yes,? (add|remove)/i.test(content);
-  var hasEntityList = /\bde-\d+\b|\bapp-\d+\b|\bflow-\d+\b|\bbp-\d+\b|\bbug-\d+\b|\bbu-\d+\b|\bdd-\d+\b|\binfra-\d+\b|\bts-\d+\b|\bperm-\d+\b/.test(content);
-  var isMarkdown = /\*\*|##|###|```/.test(content);
-
-  if (hasApproval && hasEntityList && isMarkdown) {
-    var targets = [];
-    var idRegex = /\b(de-\d+|app-\d+|flow-\d+|bp-\d+|bug-\d+|bu-\d+|dd-\d+|infra-\d+|ts-\d+|perm-\d+)\b/g;
-    var match;
-    while ((match = idRegex.exec(content)) !== null) {
-      if (targets.indexOf(match[0]) === -1) targets.push(match[0]);
+  var contentEl = lastMsg.querySelector('.chat-msg-content');
+  if (!contentEl) {
+    contentEl = document.createElement('div');
+    contentEl.className = 'chat-msg-content';
+    while (lastMsg.firstChild) {
+      contentEl.appendChild(lastMsg.firstChild);
     }
-
-    if (targets.length > 0 && !msgEl.querySelector('.chat-cmd-request')) {
-      var isRemoval = /remove|delete|clear/i.test(content);
-      var action = isRemoval ? 'remove' : 'add';
-      var catalog = inferCatalog(targets[0]);
-      state.pendingCmd = { action: action, catalog: catalog, targets: targets };
-      renderApprovalBlock(msgEl, action, catalog, targets);
-    }
+    lastMsg.appendChild(contentEl);
   }
-}
-
-function inferCatalog(id) {
-  var prefix = id.replace(/-\d+$/, '');
-  var map = {
-    'de': 'DataEntities', 'app': 'ApplicationComponents', 'flow': 'InformationFlows',
-    'bp': 'BusinessProcesses', 'bug': 'BusinessUserGroups', 'bu': 'BusinessUnits',
-    'dd': 'DataDomains', 'infra': 'InfrastructureComponents', 'ts': 'TechnologyStandards',
-    'perm': 'Permissions',
-  };
-  return map[prefix] || 'Entries';
-}
-
-function renderApprovalBlock(msgEl, action, catalog, targets) {
-  var n = targets.length;
-  var actionLabel = action === 'add' ? 'Add ' + n + ' ' + catalog : 'Remove ' + n + ' ' + catalog;
-
-  var targetsHtml = '<ul style="margin:0;padding-left:18px">';
-  for (var i = 0; i < targets.length; i++) {
-    var id = targets[i];
-    var data2 = state.entryMap[id];
-    var name = data2 ? data2.entry.name : id;
-    targetsHtml += '<li>' + escHtml(name) + ' <span class="dim">(' + escHtml(id) + ')</span></li>';
-  }
-  targetsHtml += '</ul>';
-
-  var block = document.createElement('div');
-  block.className = 'chat-cmd-request';
-  block.innerHTML = '<div class="cmd-summary">' + escHtml(actionLabel) + '</div>' +
-    '<div class="cmd-targets">' + targetsHtml + '</div>' +
-    '<div class="cmd-actions">' +
-    '<button class="cmd-btn cmd-btn-yes" id="cmdYesBtn">Yes, ' + (action === 'add' ? 'add' : 'remove') + '</button>' +
-    '<button class="cmd-btn cmd-btn-no" id="cmdNoBtn">Cancel</button>' +
-    '</div>';
-
-  msgEl.appendChild(block);
+  contentEl.innerHTML = renderMarkdown(streamContent);
   scrollChat();
-
-  block.querySelector('#cmdYesBtn').addEventListener('click', function() {
-    var btns = block.querySelectorAll('.cmd-btn');
-    for (var j = 0; j < btns.length; j++) btns[j].disabled = true;
-    var status = document.createElement('div');
-    status.className = 'cmd-status';
-    status.textContent = 'Applying...';
-    block.querySelector('.cmd-actions').replaceWith(status);
-
-    state.pendingCmd = null;
-    sendApprovalMessage('[[APPROVE:CMD_REQUEST: ' + action + '|' + catalog + '|' + targets.join(',') + ']]');
-  });
-
-  block.querySelector('#cmdNoBtn').addEventListener('click', function() {
-    var btns = block.querySelectorAll('.cmd-btn');
-    for (var j = 0; j < btns.length; j++) btns[j].disabled = true;
-    var status = document.createElement('div');
-    status.className = 'cmd-status';
-    status.textContent = 'Cancelled';
-    block.querySelector('.cmd-actions').replaceWith(status);
-
-    sendApprovalMessage('[[REJECT:CMD_REQUEST]]');
-    state.pendingCmd = null;
-  });
 }
+
+
 
 function showTyping() {
   var el = document.createElement('div');
@@ -3099,6 +3024,12 @@ async function sendChatMessage() {
   isStreaming = false;
   chatSendBtn.disabled = false;
   modelSelect.disabled = false;
+
+  if (pendingFollowUpText) {
+    var text = pendingFollowUpText;
+    pendingFollowUpText = null;
+    sendFollowUpMessage(text);
+  }
 }
 
 chatSendBtn.addEventListener('click', sendChatMessage);
@@ -3193,6 +3124,9 @@ function handleCmdRequest(data) {
   var lastMsg = chatMessagesEl.querySelector('.chat-msg.assistant:last-child');
   if (!lastMsg) return;
 
+  var existing = lastMsg.querySelector('.chat-cmd-request');
+  if (existing) existing.remove();
+
   var n = targets.length;
   var actionLabel = action === 'add' ? 'Add ' + n + ' ' + catalog : 'Remove ' + n + ' ' + catalog;
 
@@ -3210,27 +3144,39 @@ function handleCmdRequest(data) {
   block.innerHTML = '<div class="cmd-summary">' + escHtml(actionLabel) + '</div>' +
     '<div class="cmd-targets">' + targetsHtml + '</div>' +
     '<div class="cmd-actions">' +
-    '<button class="cmd-btn cmd-btn-yes" id="cmdYesBtn">Yes, ' + (action === 'add' ? 'add' : 'remove') + '</button>' +
-    '<button class="cmd-btn cmd-btn-no" id="cmdNoBtn">Cancel</button>' +
+    '<button class="cmd-btn cmd-btn-yes">Yes, ' + (action === 'add' ? 'add' : 'remove') + '</button>' +
+    '<button class="cmd-btn cmd-btn-no">Cancel</button>' +
     '</div>';
 
   lastMsg.appendChild(block);
   scrollChat();
 
-  block.querySelector('#cmdYesBtn').addEventListener('click', function() {
+  var yesBtn = block.querySelector('.cmd-btn-yes');
+  var noBtn = block.querySelector('.cmd-btn-no');
+
+  yesBtn.addEventListener('click', function() {
     var btns = block.querySelectorAll('.cmd-btn');
     for (var j = 0; j < btns.length; j++) btns[j].disabled = true;
     var status = document.createElement('div');
     status.className = 'cmd-status';
-    status.textContent = 'Applying...';
+    status.textContent = 'Applied';
     block.querySelector('.cmd-actions').replaceWith(status);
 
-    var approveMsg = '[[APPROVE:CMD_REQUEST: ' + action + '|' + catalog + '|' + targets.join(',') + ']]';
+    for (var k = 0; k < targets.length; k++) {
+      executeCommand(action, targets[k]);
+    }
+
     state.pendingCmd = null;
-    sendDirectChatMessage(approveMsg);
+    var approveMsg = '[[APPROVE:CMD_REQUEST: ' + action + '|' + catalog + '|' + targets.join(',') + ']]';
+    pendingFollowUpText = approveMsg;
+    if (!isStreaming) {
+      var text = pendingFollowUpText;
+      pendingFollowUpText = null;
+      sendFollowUpMessage(text);
+    }
   });
 
-  block.querySelector('#cmdNoBtn').addEventListener('click', function() {
+  noBtn.addEventListener('click', function() {
     var btns = block.querySelectorAll('.cmd-btn');
     for (var j = 0; j < btns.length; j++) btns[j].disabled = true;
     var status = document.createElement('div');
@@ -3238,8 +3184,13 @@ function handleCmdRequest(data) {
     status.textContent = 'Cancelled';
     block.querySelector('.cmd-actions').replaceWith(status);
 
-    sendDirectChatMessage('[[REJECT:CMD_REQUEST]]');
     state.pendingCmd = null;
+    pendingFollowUpText = '[[REJECT:CMD_REQUEST]]';
+    if (!isStreaming) {
+      var text = pendingFollowUpText;
+      pendingFollowUpText = null;
+      sendFollowUpMessage(text);
+    }
   });
 }
 
@@ -3271,19 +3222,21 @@ function updateSidebarCountsForEntry(entryId, action) {
   if (master) master.checked = selected === total && total > 0;
 }
 
-function sendDirectChatMessage(text) {
+async function sendFollowUpMessage(text) {
+  chatMessages.push({ role: 'user', content: text });
+
   var div = document.createElement('div');
   div.className = 'chat-msg user';
   div.textContent = text;
   chatMessagesEl.appendChild(div);
   scrollChat();
 
-  if (text.startsWith('[[APPROVE:CMD_REQUEST:') || text === '[[REJECT:CMD_REQUEST]]') {
-    sendApprovalMessage(text);
-  }
-}
+  showTyping();
+  isStreaming = true;
+  chatSendBtn.disabled = true;
+  modelSelect.disabled = true;
+  streamContent = '';
 
-async function sendApprovalMessage(text) {
   var body = JSON.stringify({
     messages: chatMessages.map(function(m) { return { role: m.role, content: m.content }; }),
     model: chatModel,
@@ -3296,13 +3249,23 @@ async function sendApprovalMessage(text) {
       body: body,
     });
 
-    if (!resp.ok) return;
+    if (!resp.ok) {
+      hideTyping();
+      addMessage('assistant', 'Error: Server returned ' + resp.status);
+      var errEl = chatMessagesEl.querySelector('.chat-msg.assistant:last-child');
+      if (errEl) errEl.classList.add('chat-error');
+      isStreaming = false;
+      chatSendBtn.disabled = false;
+      modelSelect.disabled = false;
+      return;
+    }
 
     var reader = resp.body.getReader();
     var decoder = new TextDecoder();
     var buffer = '';
+    var streamDone = false;
 
-    while (true) {
+    while (!streamDone) {
       var result = await reader.read();
       if (result.done) break;
 
@@ -3316,20 +3279,47 @@ async function sendApprovalMessage(text) {
 
         try {
           var data = JSON.parse(line.slice(6));
-          if (data.type === 'command') {
+          if (data.type === 'token') {
+            hideTyping();
+            appendStreamToken(data.content);
+          } else if (data.type === 'cmd_request') {
+            hideTyping();
+            handleCmdRequest(data);
+          } else if (data.type === 'command') {
             executeCommand(data.action, data.target);
-          } else if (data.type === 'done' || data.type === 'error') {
-            var lastMsg = chatMessagesEl.querySelector('.chat-msg.assistant:last-child');
-            if (lastMsg && data.type === 'done') {
-              var status = lastMsg.querySelector('.cmd-status');
-              if (status) status.textContent = 'Done.';
-            }
-            return;
+          } else if (data.type === 'done') {
+            chatMessages.push({ role: 'assistant', content: streamContent });
+            hideTyping();
+            streamDone = true;
+            break;
+          } else if (data.type === 'error') {
+            hideTyping();
+            addMessage('assistant', 'Error: ' + data.message);
+            var errEl2 = chatMessagesEl.querySelector('.chat-msg.assistant:last-child');
+            if (errEl2) errEl2.classList.add('chat-error');
+            streamDone = true;
+            break;
           }
         } catch (_) {}
       }
     }
-  } catch (err) {}
+  } catch (err) {
+    hideTyping();
+    addMessage('assistant', 'Error: Cannot connect to chat server.');
+    var errEl3 = chatMessagesEl.querySelector('.chat-msg.assistant:last-child');
+    if (errEl3) errEl3.classList.add('chat-error');
+  }
+
+  hideTyping();
+  isStreaming = false;
+  chatSendBtn.disabled = false;
+  modelSelect.disabled = false;
+
+  if (pendingFollowUpText) {
+    var nextText = pendingFollowUpText;
+    pendingFollowUpText = null;
+    sendFollowUpMessage(nextText);
+  }
 }
 </script>
 </body>
