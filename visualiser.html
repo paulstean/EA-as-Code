@@ -337,6 +337,7 @@ const state = {
   searchTerm: '',
   loadedCatalogNames: [],
   flowPositions: {},
+  savedPositions: {},
 };
 
 // ─── IndexedDB helpers ────────────────────────────────────────
@@ -527,6 +528,9 @@ async function loadFromHandle(handle) {
     initGraph();
     renderSidebar();
 
+    // Load saved positions before adding nodes
+    loadSavedPositionsToState();
+
     // Restore previous visual state
     const repulsion = restoreRepulsion();
     const spring = restoreSpring();
@@ -536,6 +540,7 @@ async function loadFromHandle(handle) {
     const maxVel = restoreMaxVel();
     const curvature = restoreCurvature();
     restoreVisibleEntries();
+    applySavedPositionsToNodes();
     restoreExpandedCatalogs();
     renderSidebar();
 
@@ -613,6 +618,36 @@ async function tryRestoreSession() {
     }
     await loadFromHandle(handle);
   } catch (_) {}
+}
+
+// ─── Position persistence ────────────────────────────────────
+function savePositionsToLocalStorage() {
+  if (!state.network) return;
+  const positions = state.network.getPositions();
+  if (Object.keys(positions).length === 0) return;
+  localStorage.setItem('ea-vis-positions', JSON.stringify(positions));
+}
+
+function loadSavedPositionsToState() {
+  const saved = localStorage.getItem('ea-vis-positions');
+  if (!saved) return;
+  try {
+    state.savedPositions = JSON.parse(saved);
+  } catch (_) {}
+}
+
+function applySavedPositionsToNodes() {
+  const positions = state.savedPositions;
+  if (!positions || Object.keys(positions).length === 0) return;
+  const updates = [];
+  for (const node of state.nodes.get()) {
+    if (positions[node.id]) {
+      updates.push({ id: node.id, x: positions[node.id].x, y: positions[node.id].y });
+    }
+  }
+  if (updates.length > 0) {
+    state.nodes.update(updates);
+  }
 }
 
 // ─── Restore helpers ──────────────────────────────────────────
@@ -950,6 +985,14 @@ function initGraph() {
     if (popoverMode.value === 'hover') hideRelationPopoverDelayed();
   });
 
+  state.network.on('dragEnd', function() {
+    savePositionsToLocalStorage();
+  });
+
+  state.network.on('stabilizationIterationsDone', function() {
+    savePositionsToLocalStorage();
+  });
+
   state.network.on('click', function(params) {
     if (params.nodes.length > 0) {
       showDetail(params.nodes[0]);
@@ -975,10 +1018,10 @@ function addEntryToGraph(entryId) {
   const data = state.entryMap[entryId];
   if (!data) return;
   const { entry, catalog } = data;
-  const pos = state.flowPositions[entryId];
+  const pos = state.savedPositions[entryId] || state.flowPositions[entryId];
   state.nodes.add({
     id: entry.id,
-    label: `['${toTitle(catalog).replace(/'/g, "\\'")}']\n<b>${entry.name.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</b>`,
+    label: `[${toTitle(catalog)}]\n<b>${entry.name.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</b>`,
     group: catalog,
     x: pos?.x,
     y: pos?.y,
@@ -1002,10 +1045,10 @@ function addCatalogAllToGraph(catalog) {
   const batch = [];
   for (const entry of entries) {
     if (state.nodes.get(entry.id)) continue;
-    const pos = state.flowPositions[entry.id];
+    const pos = state.savedPositions[entry.id] || state.flowPositions[entry.id];
     batch.push({
       id: entry.id,
-      label: `['${toTitle(catalog).replace(/'/g, "\\'")}']\n<b>${entry.name.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</b>`,
+      label: `[${toTitle(catalog)}]\n<b>${entry.name.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</b>`,
       group: catalog,
       x: pos?.x,
       y: pos?.y,
@@ -1641,7 +1684,9 @@ deselectAllBtn.addEventListener('click', function(e) {
   }
 });
 
-window.addEventListener('beforeunload', saveState);
+window.addEventListener('beforeunload', function() {
+  savePositionsToLocalStorage();
+});
 
 // Attempt session restore on load
 tryRestoreSession();
