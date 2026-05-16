@@ -181,6 +181,22 @@ header h1{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px
 #relPopover .pop-item .pop-swatch{width:8px;height:8px;border-radius:2px;flex-shrink:0}
 #relPopover .pop-item .pop-name{color:var(--text-primary);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #relPopover .pop-item .pop-desc{color:var(--text-secondary);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Text box layer */
+#textBoxLayer{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:10}
+
+/* Text box */
+.text-box{position:absolute;pointer-events:auto;background:#d3d3d3;color:#000;border-radius:6px;padding:8px;font-size:13px;line-height:1.4;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,0.3);min-width:30px;min-height:20px;cursor:move;user-select:none}
+.text-box-content{outline:none;width:100%;height:100%;cursor:text;user-select:text;white-space:pre-wrap;overflow-wrap:break-word;min-height:1em}
+.text-box-content:empty::before{content:attr(data-placeholder);color:#888}
+.text-box .resize-handle{position:absolute;bottom:0;right:0;width:14px;height:14px;cursor:nwse-resize;pointer-events:auto}
+.text-box .resize-handle::after{content:'';position:absolute;bottom:2px;right:2px;width:8px;height:8px;border-right:2px solid #666;border-bottom:2px solid #666}
+
+/* Context menu */
+#contextMenu{display:none;position:fixed;z-index:2500;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:4px 0;min-width:160px;box-shadow:0 6px 24px rgba(0,0,0,0.5);font-size:13px;overflow:hidden}
+#contextMenu .ctx-item{padding:8px 14px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:background 0.12s;color:var(--text-primary);white-space:nowrap}
+#contextMenu .ctx-item:hover{background:var(--hover-highlight)}
+#contextMenu .ctx-item .ctx-icon{font-size:14px;flex-shrink:0}
 </style>
 </head>
 <body>
@@ -274,8 +290,10 @@ header h1{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px
   <div id="graphContainer">
     <div id="graph"></div>
     <div id="emptyState">Open a repository and select catalogs to begin</div>
+    <div id="textBoxLayer"></div>
   </div>
   <div id="relPopover"></div>
+  <div id="contextMenu"></div>
 </div>
 <aside id="detailPanel">
   <div class="dp-header">
@@ -383,6 +401,7 @@ const state = {
   tabs: [],
   activeTabId: null,
   tabLoadGuard: false,
+  textBoxes: [],
 };
 
 // ─── IndexedDB helpers ────────────────────────────────────────
@@ -462,6 +481,8 @@ const maxVelSlider = $('#maxVelSlider');
 const maxVelValue = $('#maxVelValue');
 const curvatureSlider = $('#curvatureSlider');
 const curvatureValue = $('#curvatureValue');
+const contextMenu = $('#contextMenu');
+const textBoxLayer = $('#textBoxLayer');
 
 // ─── Theme ────────────────────────────────────────────────────
 function applyTheme(theme) {
@@ -558,6 +579,7 @@ function getActiveViewState() {
     theme: document.documentElement.getAttribute('data-theme') || 'dark',
     popoverMode: popoverMode.value,
     positions: positions,
+    textBoxes: state.textBoxes.map(function(tb) { return { id: tb.id, text: tb.text, x: tb.x, y: tb.y, width: tb.width, height: tb.height }; }),
   };
 }
 
@@ -587,6 +609,7 @@ function getEmptyViewState() {
     theme: document.documentElement.getAttribute('data-theme') || 'dark',
     popoverMode: 'hover',
     positions: {},
+    textBoxes: [],
   };
 }
 
@@ -680,6 +703,8 @@ function applyViewState(vs) {
       popoverMode.value = vs.popoverMode;
     }
 
+    state.textBoxes = vs.textBoxes ? vs.textBoxes.map(function(t) { return { id: t.id, text: t.text, x: t.x, y: t.y, width: t.width, height: t.height }; }) : [];
+    renderAllTextBoxes();
     renderSidebar();
   } finally {
     state.tabLoadGuard = false;
@@ -1297,6 +1322,8 @@ function initGraph() {
   state.expandedCatalogs = new Set();
   state.dimmedNodes = new Set();
   state.selectedNodeId = null;
+  state.textBoxes = [];
+  textBoxLayer.innerHTML = '';
   detailPanel.classList.remove('open');
   detailPanel.style.display = 'none';
 
@@ -1425,6 +1452,10 @@ function initGraph() {
     if (params.nodes.length > 0) {
       state.network.focus(params.nodes[0], { scale: 1.5, animation: true });
     }
+  });
+
+  state.network.on('viewChanged', function() {
+    updateTextBoxPositions();
   });
 
   emptyState.style.display = 'block';
@@ -1614,6 +1645,218 @@ function hideRelationPopoverDelayed() {
   popoverHideTimer = setTimeout(function() {
     relPopover.style.display = 'none';
   }, 400);
+}
+
+// ─── Text boxes & context menu ────────────────────────────────
+let contextMenuClickX = 0, contextMenuClickY = 0;
+let textBoxDragState = null;
+
+function showContextMenu(e, textBoxId) {
+  contextMenuClickX = e.clientX;
+  contextMenuClickY = e.clientY;
+  contextMenu.innerHTML = '';
+  if (textBoxId) {
+    var removeItem = document.createElement('div');
+    removeItem.className = 'ctx-item';
+    removeItem.id = 'ctxRemoveText';
+    removeItem.innerHTML = '<span class="ctx-icon">\u274C</span> Remove';
+    removeItem.addEventListener('click', function() {
+      hideContextMenu();
+      showConfirmModal('Remove Text Box', 'Are you sure you want to remove this text box?', function(confirmed) {
+        if (confirmed) removeTextBox(textBoxId);
+      });
+    });
+    contextMenu.appendChild(removeItem);
+  }
+  var addItem = document.createElement('div');
+  addItem.className = 'ctx-item';
+  addItem.id = 'ctxAddText';
+  addItem.innerHTML = '<span class="ctx-icon">\uD83D\uDCDD</span> Add Text Box';
+  addItem.addEventListener('click', function() {
+    hideContextMenu();
+    createTextBox(contextMenuClickX, contextMenuClickY);
+  });
+  contextMenu.appendChild(addItem);
+  contextMenu.style.display = 'block';
+  const cw = contextMenu.offsetWidth, ch = contextMenu.offsetHeight;
+  let px = contextMenuClickX, py = contextMenuClickY;
+  if (px + cw > window.innerWidth - 8) px = window.innerWidth - cw - 8;
+  if (py + ch > window.innerHeight - 8) py = window.innerHeight - ch - 8;
+  if (px < 8) px = 8;
+  if (py < 8) py = 8;
+  contextMenu.style.left = px + 'px';
+  contextMenu.style.top = py + 'px';
+}
+
+function removeTextBox(id) {
+  var el = document.getElementById(id);
+  if (el) el.remove();
+  state.textBoxes = state.textBoxes.filter(function(b) { return b.id !== id; });
+  markTabDirty();
+}
+
+function hideContextMenu() {
+  contextMenu.style.display = 'none';
+}
+
+function createTextBox(screenX, screenY) {
+  const id = 'textbox-' + Date.now();
+  const graphRect = graphEl.parentElement.getBoundingClientRect();
+  const canvasPos = state.network.DOMtoCanvas({ x: screenX - graphRect.left, y: screenY - graphRect.top });
+  const box = { id: id, text: '', x: canvasPos.x, y: canvasPos.y, width: 320, height: 80 };
+  state.textBoxes.push(box);
+  renderTextBox(box);
+  markTabDirty();
+  setTimeout(function() {
+    const el = document.getElementById(id);
+    if (el) { var c = el.querySelector('.text-box-content'); if (c) c.focus(); }
+  }, 0);
+}
+
+function positionTextBox(el, box) {
+  if (!state.network) return;
+  const scale = state.network.getScale();
+  const domPos = state.network.canvasToDOM({ x: box.x, y: box.y });
+  el.style.left = domPos.x + 'px';
+  el.style.top = domPos.y + 'px';
+  el.style.width = (box.width * scale) + 'px';
+  el.style.height = (box.height * scale) + 'px';
+}
+
+function updateTextBoxPositions() {
+  if (!state.network) return;
+  for (var i = 0; i < state.textBoxes.length; i++) {
+    var el = document.getElementById(state.textBoxes[i].id);
+    if (el) positionTextBox(el, state.textBoxes[i]);
+  }
+}
+
+function growTextBox(el, box) {
+  if (!state.network) return;
+  const content = el.querySelector('.text-box-content');
+  if (!content) return;
+  const scale = state.network.getScale();
+  const domH = content.scrollHeight + 16;
+  const domW = content.scrollWidth + 16;
+  const canvasW = domW / scale;
+  const canvasH = domH / scale;
+  if (canvasW > box.width) box.width = canvasW;
+  if (canvasH > box.height) box.height = canvasH;
+  positionTextBox(el, box);
+}
+
+function renderTextBox(box) {
+  var el = document.getElementById(box.id);
+  if (!el) {
+    el = document.createElement('div');
+    el.id = box.id;
+    el.className = 'text-box';
+    el.innerHTML = '<div class="text-box-content" contenteditable="plaintext-only" data-placeholder="Type here..."></div><div class="resize-handle"></div>';
+    textBoxLayer.appendChild(el);
+    el.addEventListener('mousedown', function(e) {
+      if (e.target.closest('.resize-handle')) { startResize(e, box.id); return; }
+      startDrag(e, box.id);
+    });
+    el.addEventListener('dblclick', function() {
+      var c = el.querySelector('.text-box-content');
+      if (c && !c.matches(':focus')) c.focus();
+    });
+    var content = el.querySelector('.text-box-content');
+    content.addEventListener('input', function() {
+      box.text = content.textContent;
+      growTextBox(el, box);
+      markTabDirty();
+    });
+    content.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') content.blur();
+    });
+  }
+  positionTextBox(el, box);
+  var content = el.querySelector('.text-box-content');
+  if (content.textContent !== box.text) content.textContent = box.text;
+  growTextBox(el, box);
+}
+
+function renderAllTextBoxes() {
+  textBoxLayer.innerHTML = '';
+  for (var i = 0; i < state.textBoxes.length; i++) {
+    renderTextBox(state.textBoxes[i]);
+  }
+}
+
+function startResize(e, boxId) {
+  e.preventDefault(); e.stopPropagation();
+  var el = document.getElementById(boxId);
+  if (!el) return;
+  var box = state.textBoxes.find(function(b) { return b.id === boxId; });
+  if (!box) return;
+  textBoxDragState = { id: boxId, mode: 'resize', startX: e.clientX, startY: e.clientY, startW: box.width, startH: box.height, started: true };
+  document.addEventListener('mousemove', onTextBoxDragMove);
+  document.addEventListener('mouseup', onTextBoxDragEnd);
+}
+
+function startDrag(e, boxId) {
+  e.preventDefault();
+  var el = document.getElementById(boxId);
+  if (!el) return;
+  var box = state.textBoxes.find(function(b) { return b.id === boxId; });
+  if (!box) return;
+  textBoxDragState = { id: boxId, mode: 'drag', startX: e.clientX, startY: e.clientY, startLeft: box.x, startTop: box.y, started: false };
+  document.addEventListener('mousemove', onTextBoxDragMove);
+  document.addEventListener('mouseup', onTextBoxDragEnd);
+}
+
+function onTextBoxDragMove(e) {
+  if (!textBoxDragState) return;
+  if (!state.network) return;
+  var s = textBoxDragState;
+  var el = document.getElementById(s.id);
+  if (!el) return;
+  var box = state.textBoxes.find(function(b) { return b.id === s.id; });
+  if (!box) return;
+  if (!s.started) {
+    var dx = Math.abs(e.clientX - s.startX);
+    var dy = Math.abs(e.clientY - s.startY);
+    if (dx < 3 && dy < 3) return;
+    s.started = true;
+  }
+  if (s.mode === 'drag') {
+    var scale = state.network.getScale();
+    box.x = s.startLeft + (e.clientX - s.startX) / scale;
+    box.y = s.startTop + (e.clientY - s.startY) / scale;
+    positionTextBox(el, box);
+    markTabDirty();
+  } else if (s.mode === 'resize') {
+    var scale = state.network.getScale();
+    var newW = Math.max(30, s.startW + (e.clientX - s.startX) / scale);
+    var newH = Math.max(20, s.startH + (e.clientY - s.startY) / scale);
+    var content = el.querySelector('.text-box-content');
+    if (content) {
+      el.style.width = (newW * scale) + 'px';
+      el.style.height = 'auto';
+      var minDomH = content.scrollHeight;
+      var origW = el.style.width;
+      el.style.width = '0px';
+      content.style.whiteSpace = 'nowrap';
+      var minDomW = content.scrollWidth;
+      content.style.whiteSpace = '';
+      el.style.width = origW;
+      var minW = Math.max(30, (minDomW + 16) / scale);
+      var minH = Math.max(20, (minDomH + 16) / scale);
+      newW = Math.max(newW, minW);
+      newH = Math.max(newH, minH);
+    }
+    box.width = newW;
+    box.height = newH;
+    positionTextBox(el, box);
+    markTabDirty();
+  }
+}
+
+function onTextBoxDragEnd() {
+  document.removeEventListener('mousemove', onTextBoxDragMove);
+  document.removeEventListener('mouseup', onTextBoxDragEnd);
+  textBoxDragState = null;
 }
 
 function resolveEdges() {
@@ -1987,13 +2230,33 @@ popoverMode.addEventListener('change', function() {
 
 graphEl.addEventListener('contextmenu', function(e) {
   e.preventDefault();
-  if (popoverMode.value !== 'rightclick') return;
   if (!state.network) return;
   const rect = graphEl.getBoundingClientRect();
   const nodeId = state.network.getNodeAt({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-  if (!nodeId) return;
-  clearTimeout(popoverHideTimer);
-  showRelationPopover(nodeId, e.clientX, e.clientY);
+  if (nodeId && popoverMode.value === 'rightclick') {
+    clearTimeout(popoverHideTimer);
+    showRelationPopover(nodeId, e.clientX, e.clientY);
+    return;
+  }
+  relPopover.style.display = 'none';
+  showContextMenu(e);
+});
+
+// Hide context menu on left-click or Escape
+contextMenu.addEventListener('mousedown', function(e) { e.stopPropagation(); });
+document.addEventListener('mousedown', function(e) {
+  if (contextMenu.style.display !== 'none') hideContextMenu();
+});
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && contextMenu.style.display !== 'none') hideContextMenu();
+});
+
+// Right-click on text box layer
+textBoxLayer.addEventListener('contextmenu', function(e) {
+  if (!state.network) return;
+  e.preventDefault();
+  var tbEl = e.target.closest('.text-box');
+  showContextMenu(e, tbEl ? tbEl.id : null);
 });
 
 physicsToggle.addEventListener('change', function() {
