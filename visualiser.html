@@ -55,7 +55,7 @@ header h1{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px
 #main{display:flex;flex:1;overflow:hidden}
 
 /* Sidebar */
-#sidebar{width:280px;min-width:280px;background:var(--bg-secondary);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0}
+#sidebar{width:560px;min-width:560px;background:var(--bg-secondary);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0}
 #sidebar > *{padding:12px 14px;border-bottom:1px solid var(--border)}
 #sidebar > :last-child{border-bottom:none}
 
@@ -77,6 +77,10 @@ header h1{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px
 #searchInput{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg-primary);color:var(--text-primary);font-size:13px;outline:none;transition:border 0.15s}
 #searchInput:focus{border-color:var(--accent)}
 #searchInput::placeholder{color:var(--text-muted)}
+.physics-slider{-webkit-appearance:none;appearance:none;height:4px;background:var(--border);border-radius:2px;outline:none;cursor:pointer;vertical-align:middle}
+.physics-slider::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer;border:none}
+.physics-slider::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer;border:none}
+.physics-label{min-width:95px;display:inline-block}
 
 /* Catalog groups */
 #catalogList{display:flex;flex-direction:column;gap:2px}
@@ -162,6 +166,44 @@ header h1{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px
     </div>
     <div>
       <input id="searchInput" type="text" placeholder="&#x1F50D; Filter nodes by name or description..." disabled>
+    </div>
+    <div>
+      <strong style="font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);display:block;margin-bottom:6px">Physics</strong>
+      <label style="font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:8px">
+        <span class="physics-label">Repulsion</span>
+        <input type="range" class="physics-slider" id="repulsionSlider" min="10" max="2000" step="10" value="800" style="flex:1" disabled>
+        <span id="repulsionValue" style="font-size:11px;color:var(--text-muted);min-width:50px;text-align:right">800</span>
+      </label>
+      <label style="font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:8px">
+        <span class="physics-label">Spring</span>
+        <input type="range" class="physics-slider" id="springSlider" min="10" max="400" step="5" value="150" style="flex:1" disabled>
+        <span id="springValue" style="font-size:11px;color:var(--text-muted);min-width:50px;text-align:right">150</span>
+      </label>
+      <label style="font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:8px">
+        <span class="physics-label">Central Gravity</span>
+        <input type="range" class="physics-slider" id="gravitySlider" min="0" max="1" step="0.01" value="0.1" style="flex:1" disabled>
+        <span id="gravityValue" style="font-size:11px;color:var(--text-muted);min-width:50px;text-align:right">0.10</span>
+      </label>
+      <label style="font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:8px">
+        <span class="physics-label">Damping</span>
+        <input type="range" class="physics-slider" id="dampingSlider" min="0" max="1" step="0.01" value="0.09" style="flex:1" disabled>
+        <span id="dampingValue" style="font-size:11px;color:var(--text-muted);min-width:50px;text-align:right">0.09</span>
+      </label>
+      <label style="font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:8px">
+        <span class="physics-label">Spring Const</span>
+        <input type="range" class="physics-slider" id="springConstSlider" min="0.001" max="0.1" step="0.001" value="0.01" style="flex:1" disabled>
+        <span id="springConstValue" style="font-size:11px;color:var(--text-muted);min-width:55px;text-align:right">0.010</span>
+      </label>
+      <label style="font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:8px">
+        <span class="physics-label">Max Velocity</span>
+        <input type="range" class="physics-slider" id="maxVelSlider" min="1" max="50" step="1" value="15" style="flex:1" disabled>
+        <span id="maxVelValue" style="font-size:11px;color:var(--text-muted);min-width:50px;text-align:right">15</span>
+      </label>
+      <label style="font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:8px">
+        <span class="physics-label">Edge Curvature</span>
+        <input type="range" class="physics-slider" id="curvatureSlider" min="0" max="1" step="0.01" value="0.1" style="flex:1" disabled>
+        <span id="curvatureValue" style="font-size:11px;color:var(--text-muted);min-width:50px;text-align:right">0.10</span>
+      </label>
     </div>
     <div>
       <strong style="font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);display:block;margin-bottom:6px">Legend</strong>
@@ -270,6 +312,51 @@ const state = {
   flowPositions: {},
 };
 
+// ─── IndexedDB helpers ────────────────────────────────────────
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open('ea-vis', 1);
+    req.onupgradeneeded = () => req.result.createObjectStore('store');
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function dbSet(key, val) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('store', 'readwrite');
+    tx.objectStore('store').put(val, key);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function dbGet(key) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('store', 'readonly');
+    const req = tx.objectStore('store').get(key);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+// ─── Save / Restore helpers ───────────────────────────────────
+function saveState() {
+  try {
+    localStorage.setItem('ea-vis-visible', [...state.visibleEntries].join(','));
+    localStorage.setItem('ea-vis-expanded', [...state.expandedCatalogs].join(','));
+    localStorage.setItem('ea-vis-search', state.searchTerm);
+    localStorage.setItem('ea-vis-spring', springSlider.value);
+    localStorage.setItem('ea-vis-gravity', gravitySlider.value);
+    localStorage.setItem('ea-vis-damping', dampingSlider.value);
+    localStorage.setItem('ea-vis-spring-const', springConstSlider.value);
+    localStorage.setItem('ea-vis-max-vel', maxVelSlider.value);
+    localStorage.setItem('ea-vis-curvature', curvatureSlider.value);
+  } catch (_) {}
+}
+
 // ─── DOM refs ─────────────────────────────────────────────────
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
@@ -288,6 +375,20 @@ const dpTitle = $('#dpTitle');
 const dpBody = $('#dpBody');
 const dpClose = $('#dpClose');
 const themeToggle = $('#themeToggle');
+const repulsionSlider = $('#repulsionSlider');
+const repulsionValue = $('#repulsionValue');
+const springSlider = $('#springSlider');
+const springValue = $('#springValue');
+const gravitySlider = $('#gravitySlider');
+const gravityValue = $('#gravityValue');
+const dampingSlider = $('#dampingSlider');
+const dampingValue = $('#dampingValue');
+const springConstSlider = $('#springConstSlider');
+const springConstValue = $('#springConstValue');
+const maxVelSlider = $('#maxVelSlider');
+const maxVelValue = $('#maxVelValue');
+const curvatureSlider = $('#curvatureSlider');
+const curvatureValue = $('#curvatureValue');
 
 // ─── Theme ────────────────────────────────────────────────────
 function applyTheme(theme) {
@@ -330,16 +431,14 @@ function toTitle(str) {
 }
 
 // ─── Directory loading (File System Access API) ───────────────
-async function loadRepository() {
-  if (state.isLoading) return;
-  try {
-    const handle = await window.showDirectoryPicker({ mode: 'read', startIn: 'documents' });
-    state.isLoading = true;
-    openBtn.disabled = true;
-    openBtn.textContent = '\uD83D\uDCC2 Loading\u2026';
-    openBtn.className = '';
-    toast.textContent = '';
+async function loadFromHandle(handle) {
+  state.isLoading = true;
+  openBtn.disabled = true;
+  openBtn.textContent = '\uD83D\uDCC2 Loading\u2026';
+  openBtn.className = '';
+  toast.textContent = '';
 
+  try {
     // Find metamodel.json
     let mmHandle = null;
     try { mmHandle = await handle.getFileHandle('metamodel.json'); } catch (_) {}
@@ -386,9 +485,33 @@ async function loadRepository() {
     }
     state.flowPositions = computeFlowPositions();
 
+    // Persist handle for session restore
+    try { await dbSet('dirHandle', handle); } catch (_) {}
+
     // Init graph
     initGraph();
     renderSidebar();
+
+    // Restore previous visual state
+    const repulsion = restoreRepulsion();
+    const spring = restoreSpring();
+    const gravity = restoreGravity();
+    const damping = restoreDamping();
+    const springConst = restoreSpringConst();
+    const maxVel = restoreMaxVel();
+    const curvature = restoreCurvature();
+    restoreVisibleEntries();
+    restoreExpandedCatalogs();
+    renderSidebar();
+
+    restoreSearch();
+    repulsionSlider.disabled = false;
+    springSlider.disabled = false;
+    gravitySlider.disabled = false;
+    dampingSlider.disabled = false;
+    springConstSlider.disabled = false;
+    maxVelSlider.disabled = false;
+    curvatureSlider.disabled = false;
     searchInput.disabled = false;
     selectAllBar.style.display = 'flex';
     toast.textContent = `Loaded ${state.loadedCatalogNames.length} catalogs from ${handle.name}`;
@@ -397,15 +520,21 @@ async function loadRepository() {
     openBtn.className = '';
     openBtn.disabled = false;
     state.isLoading = false;
+    repulsionSlider.value = repulsion;
+    repulsionValue.textContent = repulsion;
+    springSlider.value = spring;
+    springValue.textContent = spring;
+    gravitySlider.value = gravity;
+    gravityValue.textContent = gravity.toFixed(2);
+    dampingSlider.value = damping;
+    dampingValue.textContent = damping.toFixed(2);
+    springConstSlider.value = springConst;
+    springConstValue.textContent = springConst.toFixed(3);
+    maxVelSlider.value = maxVel;
+    maxVelValue.textContent = maxVel;
+    curvatureSlider.value = curvature;
+    curvatureValue.textContent = curvature.toFixed(2);
   } catch (err) {
-    if (err.name === 'AbortError' || err.name === 'SecurityError') {
-      // User cancelled or permission denied
-      state.isLoading = false;
-      openBtn.disabled = false;
-      openBtn.textContent = '\uD83D\uDCC2 Open Repository';
-      openBtn.className = '';
-      return;
-    }
     state.isLoading = false;
     openBtn.disabled = false;
     openBtn.textContent = '\uD83D\uDCC2 Open Repository';
@@ -413,6 +542,95 @@ async function loadRepository() {
     toast.textContent = err.message || 'Failed to load repository';
     toast.style.color = 'var(--error)';
   }
+}
+
+async function loadRepository() {
+  if (state.isLoading) return;
+  try {
+    const handle = await window.showDirectoryPicker({ mode: 'read', startIn: 'documents' });
+    await loadFromHandle(handle);
+  } catch (err) {
+    if (err.name === 'AbortError' || err.name === 'SecurityError') {
+      state.isLoading = false;
+      openBtn.disabled = false;
+      return;
+    }
+    state.isLoading = false;
+    openBtn.disabled = false;
+    openBtn.className = 'error';
+    toast.textContent = err.message || 'Failed to load repository';
+    toast.style.color = 'var(--error)';
+  }
+}
+
+async function tryRestoreSession() {
+  try {
+    const handle = await dbGet('dirHandle');
+    if (!handle) return;
+    if (await handle.queryPermission({ mode: 'read' }) !== 'granted') {
+      const result = await handle.requestPermission({ mode: 'read' });
+      if (result !== 'granted') return;
+    }
+    await loadFromHandle(handle);
+  } catch (_) {}
+}
+
+// ─── Restore helpers ──────────────────────────────────────────
+function restoreInt(key, def, min, max) {
+  const saved = parseInt(localStorage.getItem(key));
+  return isNaN(saved) ? def : Math.max(min, Math.min(max, saved));
+}
+
+function restoreFloat(key, def, min, max) {
+  const saved = parseFloat(localStorage.getItem(key));
+  return isNaN(saved) ? def : Math.max(min, Math.min(max, saved));
+}
+
+function restoreRepulsion() { return restoreInt('ea-vis-repulsion', 800, 10, 2000); }
+function restoreSpring() { return restoreInt('ea-vis-spring', 150, 10, 400); }
+function restoreGravity() { return restoreFloat('ea-vis-gravity', 0.1, 0, 1); }
+function restoreDamping() { return restoreFloat('ea-vis-damping', 0.09, 0, 1); }
+function restoreSpringConst() { return restoreFloat('ea-vis-spring-const', 0.01, 0.001, 0.1); }
+function restoreMaxVel() { return restoreInt('ea-vis-max-vel', 15, 1, 50); }
+function restoreCurvature() { return restoreFloat('ea-vis-curvature', 0.1, 0, 1); }
+
+function restoreVisibleEntries() {
+  const visible = localStorage.getItem('ea-vis-visible');
+  if (!visible) return;
+  const ids = visible.split(',').filter(Boolean);
+  for (const id of ids) {
+    if (state.entryMap[id] && !state.nodes.get(id)) {
+      addEntryToGraph(id);
+    }
+  }
+}
+
+function restoreExpandedCatalogs() {
+  const expanded = localStorage.getItem('ea-vis-expanded');
+  if (!expanded) return;
+  for (const cat of expanded.split(',').filter(Boolean)) {
+    state.expandedCatalogs.add(cat);
+  }
+}
+
+function restoreSearch() {
+  const saved = localStorage.getItem('ea-vis-search');
+  if (!saved) return;
+  searchInput.value = saved;
+  state.searchTerm = saved;
+  const term = saved.trim().toLowerCase();
+  if (term.length === 0) return;
+  state.dimmedNodes.clear();
+  for (const node of state.nodes.get()) {
+    const data = state.entryMap[node.id];
+    if (!data) continue;
+    const name = (data.entry.name || '').toLowerCase();
+    const desc = (data.entry.description || '').toLowerCase();
+    if (!name.includes(term) && !desc.includes(term)) {
+      state.dimmedNodes.add(node.id);
+    }
+  }
+  updateNodeColors();
 }
 
 // ─── Graph ────────────────────────────────────────────────────
@@ -449,6 +667,13 @@ function initGraph() {
   }
 
   const container = graphEl;
+  const repulsion = restoreRepulsion();
+  const spring = restoreSpring();
+  const gravity = restoreGravity();
+  const damping = restoreDamping();
+  const springConst = restoreSpringConst();
+  const maxVel = restoreMaxVel();
+  const curvature = restoreCurvature();
   const options = {
     groups,
     nodes: {
@@ -458,21 +683,21 @@ function initGraph() {
     edges: {
       arrows: { to: { enabled: true, scaleFactor: 0.8 } },
       width: 1.5,
-      smooth: { type: 'curvedCW', roundness: 0.1 },
+      smooth: { type: 'curvedCW', roundness: curvature },
       font: { size: 0 },
     },
     physics: {
       enabled: true,
       solver: 'barnesHut',
       barnesHut: {
-        gravitationalConstant: -800,
-        centralGravity: 0.1,
-        springLength: 150,
-        springConstant: 0.01,
-        damping: 0.09,
+        gravitationalConstant: -repulsion,
+        centralGravity: gravity,
+        springLength: spring,
+        springConstant: springConst,
+        damping: damping,
       },
       stabilization: { iterations: 1000, updateInterval: 25 },
-      maxVelocity: 15,
+      maxVelocity: maxVel,
       minVelocity: 0.75,
     },
     interaction: {
@@ -1065,30 +1290,6 @@ function renderSidebar() {
     });
   });
 
-  // Select All / Deselect All
-  selectAllBtn.addEventListener('click', function(e) {
-    e.preventDefault();
-    for (const group of catalogList.querySelectorAll('.cat-group')) {
-      const cat = group.dataset.catalog;
-      addCatalogAllToGraph(cat);
-      group.querySelectorAll('.entry-item input[type="checkbox"]').forEach(c => c.checked = true);
-      group.querySelector('.cat-master').checked = true;
-      const entries = state.entries[cat] || [];
-      group.querySelector('.cat-count').textContent = entries.length + '/' + entries.length;
-    }
-  });
-
-  deselectAllBtn.addEventListener('click', function(e) {
-    e.preventDefault();
-    for (const group of catalogList.querySelectorAll('.cat-group')) {
-      const cat = group.dataset.catalog;
-      removeCatalogAllFromGraph(cat);
-      group.querySelectorAll('.entry-item input[type="checkbox"]').forEach(c => c.checked = false);
-      group.querySelector('.cat-master').checked = false;
-      group.querySelector('.cat-count').textContent = '0/' + (state.entries[cat] || []).length;
-    }
-  });
-
   // Legend
   let lgdHtml = '';
   for (const cat of state.loadedCatalogNames) {
@@ -1099,8 +1300,113 @@ function renderSidebar() {
   legend.innerHTML = lgdHtml || '<div class="empty-catalogs">No catalogs loaded</div>';
 }
 
-// ─── Events ───────────────────────────────────────────────────
+// ─── One-time event wiring ────────────────────────────────────
 openBtn.addEventListener('click', loadRepository);
+
+repulsionSlider.addEventListener('input', function() {
+  const val = parseInt(this.value);
+  repulsionValue.textContent = val;
+  localStorage.setItem('ea-vis-repulsion', val);
+  if (state.network) {
+    state.network.setOptions({
+      physics: { barnesHut: { gravitationalConstant: -val } }
+    });
+  }
+});
+
+springSlider.addEventListener('input', function() {
+  const val = parseInt(this.value);
+  springValue.textContent = val;
+  localStorage.setItem('ea-vis-spring', val);
+  if (state.network) {
+    state.network.setOptions({
+      physics: { barnesHut: { springLength: val } }
+    });
+  }
+});
+
+gravitySlider.addEventListener('input', function() {
+  const val = parseFloat(this.value);
+  gravityValue.textContent = val.toFixed(2);
+  localStorage.setItem('ea-vis-gravity', val);
+  if (state.network) {
+    state.network.setOptions({
+      physics: { barnesHut: { centralGravity: val } }
+    });
+  }
+});
+
+dampingSlider.addEventListener('input', function() {
+  const val = parseFloat(this.value);
+  dampingValue.textContent = val.toFixed(2);
+  localStorage.setItem('ea-vis-damping', val);
+  if (state.network) {
+    state.network.setOptions({
+      physics: { barnesHut: { damping: val } }
+    });
+  }
+});
+
+springConstSlider.addEventListener('input', function() {
+  const val = parseFloat(this.value);
+  springConstValue.textContent = val.toFixed(3);
+  localStorage.setItem('ea-vis-spring-const', val);
+  if (state.network) {
+    state.network.setOptions({
+      physics: { barnesHut: { springConstant: val } }
+    });
+  }
+});
+
+maxVelSlider.addEventListener('input', function() {
+  const val = parseInt(this.value);
+  maxVelValue.textContent = val;
+  localStorage.setItem('ea-vis-max-vel', val);
+  if (state.network) {
+    state.network.setOptions({
+      physics: { maxVelocity: val }
+    });
+  }
+});
+
+curvatureSlider.addEventListener('input', function() {
+  const val = parseFloat(this.value);
+  curvatureValue.textContent = val.toFixed(2);
+  localStorage.setItem('ea-vis-curvature', val);
+  if (state.network) {
+    state.network.setOptions({
+      edges: { smooth: { roundness: val } }
+    });
+  }
+});
+
+selectAllBtn.addEventListener('click', function(e) {
+  e.preventDefault();
+  for (const group of catalogList.querySelectorAll('.cat-group')) {
+    const cat = group.dataset.catalog;
+    addCatalogAllToGraph(cat);
+    group.querySelectorAll('.entry-item input[type="checkbox"]').forEach(c => c.checked = true);
+    group.querySelector('.cat-master').checked = true;
+    const entries = state.entries[cat] || [];
+    group.querySelector('.cat-count').textContent = entries.length + '/' + entries.length;
+  }
+});
+
+deselectAllBtn.addEventListener('click', function(e) {
+  e.preventDefault();
+  for (const group of catalogList.querySelectorAll('.cat-group')) {
+    const cat = group.dataset.catalog;
+    removeCatalogAllFromGraph(cat);
+    group.querySelectorAll('.entry-item input[type="checkbox"]').forEach(c => c.checked = false);
+    group.querySelector('.cat-master').checked = false;
+    group.querySelector('.cat-count').textContent = '0/' + (state.entries[cat] || []).length;
+  }
+});
+
+window.addEventListener('beforeunload', saveState);
+
+// Attempt session restore on load
+tryRestoreSession();
 </script>
 </body>
 </html>
