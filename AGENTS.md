@@ -15,6 +15,7 @@ metamodel.json              # Always check this first for the canonical schema
 catalogs/<Catalog>/
   <Catalog>.json            # Array of entries
   <Catalog>-Meta.json       # Schema, field defs, relationships
+ea-chat-server.py           # Read-only AI chat server (Ollama integration, SSE streaming)
 rules/*.md                  # Governance rule files (auto-evaluated by CI)
 skills/*.md                 # Agent skill files (loaded on demand by coding agents)
 .github/

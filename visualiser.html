@@ -212,6 +212,52 @@ header h1{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px
 #contextMenu .ctx-item{padding:8px 14px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:background 0.12s;color:var(--text-primary);white-space:nowrap}
 #contextMenu .ctx-item:hover{background:var(--hover-highlight)}
 #contextMenu .ctx-item .ctx-icon{font-size:14px;flex-shrink:0}
+
+/* Chat Panel */
+#chatPanel{width:380px;min-width:380px;background:var(--bg-secondary);border-left:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;transition:width 0.25s,min-width 0.25s;overflow:hidden}
+#chatPanel.collapsed{width:34px;min-width:34px}
+#chatPanel.collapsed .chat-messages,#chatPanel.collapsed .chat-input-area,#chatPanel.collapsed .chat-status,#chatPanel.collapsed .chat-title{display:none}
+.chat-header{display:flex;align-items:center;gap:6px;padding:8px 10px;border-bottom:1px solid var(--border);flex-shrink:0;min-height:36px}
+.chat-title{font-size:13px;font-weight:600;color:var(--text-primary);flex:1}
+.chat-status{font-size:10px;cursor:default}
+.chat-status.connected{color:var(--success)}
+.chat-status.disconnected{color:var(--error)}
+.chat-status.checking{color:var(--text-muted)}
+.chat-toggle{background:none;border:1px solid var(--border);border-radius:4px;padding:1px 6px;cursor:pointer;font-size:14px;color:var(--text-secondary);line-height:1;transition:all 0.12s;flex-shrink:0}
+.chat-toggle:hover{background:var(--hover-highlight);color:var(--text-primary);border-color:var(--accent)}
+#modelSelect{font-size:11px;background:var(--bg-primary);color:var(--text-primary);border:1px solid var(--border);border-radius:4px;padding:1px 4px;cursor:pointer;flex-shrink:0;max-width:120px}
+#modelSelect:disabled{opacity:0.5;cursor:not-allowed}
+.chat-messages{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px;scrollbar-width:thin}
+.chat-messages::-webkit-scrollbar{width:4px}
+.chat-messages::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.chat-welcome{color:var(--text-muted);font-size:12px;text-align:center;padding:20px 10px;font-style:italic}
+.chat-msg{max-width:92%;padding:8px 12px;border-radius:8px;font-size:13px;line-height:1.5;word-wrap:break-word;animation:fadeIn 0.2s}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.chat-msg.user{align-self:flex-end;background:var(--accent);color:var(--bg-primary);border-bottom-right-radius:2px}
+.chat-msg.assistant{align-self:flex-start;background:var(--bg-card);color:var(--text-primary);border-bottom-left-radius:2px;border:1px solid var(--border)}
+.chat-msg.assistant strong{color:var(--accent)}
+.chat-msg.assistant code{background:var(--bg-primary);padding:1px 4px;border-radius:3px;font-size:12px;font-family:monospace;color:var(--accent)}
+.chat-msg.assistant pre{background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;padding:8px 10px;overflow-x:auto;margin:6px 0;font-size:12px;line-height:1.4}
+.chat-msg.assistant pre code{background:none;padding:0;color:var(--text-primary)}
+.chat-msg.assistant ul,.chat-msg.assistant ol{margin:4px 0;padding-left:18px}
+.chat-msg.assistant li{margin:2px 0}
+.chat-msg.assistant p{margin:4px 0}
+.chat-msg.assistant p:first-child{margin-top:0}
+.chat-msg.assistant p:last-child{margin-bottom:0}
+.chat-msg.assistant hr{border:none;border-top:1px solid var(--border);margin:8px 0}
+.chat-typing{display:flex;gap:4px;padding:8px 12px;align-self:flex-start;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;border-bottom-left-radius:2px}
+.chat-typing span{width:6px;height:6px;border-radius:50%;background:var(--text-muted);animation:typing 1.2s infinite ease-in-out}
+.chat-typing span:nth-child(2){animation-delay:0.2s}
+.chat-typing span:nth-child(3){animation-delay:0.4s}
+@keyframes typing{0%,60%,100%{opacity:0.3;transform:scale(1)}30%{opacity:1;transform:scale(1.2)}}
+.chat-input-area{display:flex;gap:6px;padding:8px 10px;border-top:1px solid var(--border);flex-shrink:0}
+#chatInput{flex:1;background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text-primary);font-size:13px;font-family:inherit;resize:none;outline:none;line-height:1.4;max-height:120px}
+#chatInput:focus{border-color:var(--accent)}
+#chatInput::placeholder{color:var(--text-muted)}
+#chatSendBtn{background:var(--accent);border:none;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:14px;color:var(--bg-primary);transition:opacity 0.15s;flex-shrink:0;align-self:flex-end}
+#chatSendBtn:hover{opacity:0.85}
+#chatSendBtn:disabled{opacity:0.4;cursor:not-allowed}
+.chat-msg.assistant.chat-error{color:var(--error) !important;border-color:var(--error) !important}
 </style>
 </head>
 <body>
@@ -314,6 +360,21 @@ header h1{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px
       <button class="fmt-btn" id="fmtLarge" title="Large size">L</button>
     </div>
   </div>
+  <aside id="chatPanel">
+    <div class="chat-header">
+      <span class="chat-title">AI Chat</span>
+      <select id="modelSelect" title="Select Ollama model"></select>
+      <span class="chat-status checking" id="chatStatus" title="Checking connection...">&#9679;</span>
+      <button class="chat-toggle" id="chatToggle" title="Toggle chat panel">&times;</button>
+    </div>
+    <div class="chat-messages" id="chatMessages">
+      <div class="chat-welcome">Ask about the EA repository...</div>
+    </div>
+    <div class="chat-input-area">
+      <textarea id="chatInput" rows="1" placeholder="Ask a question..." title="Enter to send, Shift+Enter for newline"></textarea>
+      <button id="chatSendBtn" title="Send">&#9654;</button>
+    </div>
+  </aside>
   <div id="relPopover"></div>
   <div id="contextMenu"></div>
 </div>
@@ -2699,6 +2760,230 @@ window.addEventListener('beforeunload', function() {
 
 // Attempt session restore on load
 tryRestoreSession();
+
+// ─── AI Chat ────────────────────────────────────────────────
+const CHAT_SERVER = 'http://localhost:8765';
+let chatModel = 'qwen3.5:latest';
+const chatMessages = [];
+let isStreaming = false;
+
+const chatPanel = document.getElementById('chatPanel');
+const chatMessagesEl = document.getElementById('chatMessages');
+const chatInput = document.getElementById('chatInput');
+const chatSendBtn = document.getElementById('chatSendBtn');
+const chatToggle = document.getElementById('chatToggle');
+const chatStatus = document.getElementById('chatStatus');
+const modelSelect = document.getElementById('modelSelect');
+
+async function checkChatServer() {
+  chatStatus.className = 'checking';
+  try {
+    const resp = await fetch(CHAT_SERVER + '/api/health');
+    const data = await resp.json();
+    if (data.ollama === 'connected') {
+      chatStatus.className = 'connected';
+      chatStatus.title = 'Connected';
+      if (data.model) chatModel = data.model;
+      if (data.models) {
+        modelSelect.innerHTML = '';
+        for (const m of data.models) {
+          const opt = document.createElement('option');
+          opt.value = m;
+          opt.textContent = m;
+          modelSelect.appendChild(opt);
+        }
+        modelSelect.value = chatModel;
+      }
+      modelSelect.disabled = isStreaming;
+    } else {
+      chatStatus.className = 'disconnected';
+      chatStatus.title = 'Ollama not connected';
+    }
+  } catch (_) {
+    chatStatus.className = 'disconnected';
+    chatStatus.title = 'Server not reachable. Run: python3 ea-chat-server.py';
+  }
+}
+
+function renderMarkdown(text) {
+  var html = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  html = html.replace(/```(\w*)\n?([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
+  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+  html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/^---+$/gm, '<hr>');
+  html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
+  html = html.replace(/(<li>.*<\/li>\n?)+/g, function(m) { return '<ul>' + m + '</ul>'; });
+  html = html.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+  html = html.replace(/(<li>.*<\/li>\n?)+/g, function(m) { return '<ol>' + m + '</ol>'; });
+  html = html.replace(/\n\n+/g, '</p><p>');
+  html = html.replace(/\n/g, '<br>');
+  if (html.indexOf('<') !== 0) html = '<p>' + html + '</p>';
+  html = html.replace(/<\/p>\n?<(ul|ol)>/g, '<$1>');
+  html = html.replace( /<\/(ul|ol)>\n?<p>/g, '</$1>');
+  return html;
+}
+
+function scrollChat() {
+  chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+}
+
+function addMessage(role, content) {
+  chatMessages.push({ role: role, content: content });
+  var div = document.createElement('div');
+  div.className = 'chat-msg ' + role;
+  if (role === 'assistant') {
+    div.innerHTML = renderMarkdown(content);
+  } else {
+    div.textContent = content;
+  }
+  chatMessagesEl.appendChild(div);
+  scrollChat();
+}
+
+var streamContent = '';
+
+function appendStreamToken(token) {
+  streamContent += token;
+  var lastMsg = chatMessagesEl.querySelector('.chat-msg.assistant:last-child');
+  if (!lastMsg) {
+    lastMsg = document.createElement('div');
+    lastMsg.className = 'chat-msg assistant';
+    chatMessagesEl.appendChild(lastMsg);
+  }
+  lastMsg.innerHTML = renderMarkdown(streamContent);
+  scrollChat();
+}
+
+function showTyping() {
+  var el = document.createElement('div');
+  el.className = 'chat-typing';
+  el.id = 'chatTyping';
+  el.innerHTML = '<span></span><span></span><span></span>';
+  chatMessagesEl.appendChild(el);
+  scrollChat();
+}
+
+function hideTyping() {
+  var el = document.getElementById('chatTyping');
+  if (el) el.remove();
+}
+
+async function sendChatMessage() {
+  var text = chatInput.value.trim();
+  if (!text || isStreaming) return;
+
+  chatInput.value = '';
+  chatInput.style.height = 'auto';
+
+  addMessage('user', text);
+  showTyping();
+  isStreaming = true;
+  chatSendBtn.disabled = true;
+  modelSelect.disabled = true;
+  streamContent = '';
+
+  var body = JSON.stringify({
+    messages: chatMessages.map(function(m) { return { role: m.role, content: m.content }; }),
+    model: chatModel,
+  });
+
+  try {
+    var resp = await fetch(CHAT_SERVER + '/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: body,
+    });
+
+    if (!resp.ok) {
+      var errText = await resp.text();
+      hideTyping();
+      addMessage('assistant', 'Error: Server returned ' + resp.status + '. ' + errText);
+      var el = chatMessagesEl.querySelector('.chat-msg.assistant:last-child');
+      if (el) el.classList.add('chat-error');
+      isStreaming = false;
+      chatSendBtn.disabled = false;
+      modelSelect.disabled = false;
+      return;
+    }
+
+    var reader = resp.body.getReader();
+    var decoder = new TextDecoder();
+    var buffer = '';
+    var streamDone = false;
+
+    while (!streamDone) {
+      var result = await reader.read();
+      if (result.done) break;
+
+      buffer += decoder.decode(result.value, { stream: true });
+      var lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (var i = 0; i < lines.length; i++) {
+        var line = lines[i].trim();
+        if (line.indexOf('data: ') !== 0) continue;
+
+        try {
+          var data = JSON.parse(line.slice(6));
+          if (data.type === 'token') {
+            hideTyping();
+            appendStreamToken(data.content);
+          } else if (data.type === 'done') {
+            chatMessages.push({ role: 'assistant', content: streamContent });
+            hideTyping();
+            streamDone = true;
+            break;
+          } else if (data.type === 'error') {
+            hideTyping();
+            var errDiv = document.createElement('div');
+            errDiv.className = 'chat-msg assistant chat-error';
+            errDiv.textContent = 'Error: ' + data.message;
+            chatMessagesEl.appendChild(errDiv);
+            scrollChat();
+          }
+        } catch (_) {}
+      }
+    }
+  } catch (err) {
+    hideTyping();
+    addMessage('assistant', 'Error: Cannot connect to chat server. Make sure `python3 ea-chat-server.py` is running on port 8765.');
+    var el = chatMessagesEl.querySelector('.chat-msg.assistant:last-child');
+    if (el) el.classList.add('chat-error');
+  }
+
+  hideTyping();
+  isStreaming = false;
+  chatSendBtn.disabled = false;
+  modelSelect.disabled = false;
+}
+
+chatSendBtn.addEventListener('click', sendChatMessage);
+
+chatInput.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendChatMessage();
+  }
+});
+
+chatInput.addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+});
+
+modelSelect.addEventListener('change', function() {
+  if (!isStreaming) chatModel = this.value;
+});
+
+chatToggle.addEventListener('click', function() {
+  chatPanel.classList.toggle('collapsed');
+  this.textContent = chatPanel.classList.contains('collapsed') ? '\u25B6' : '\u00D7';
+  if (state.network) {
+    setTimeout(function() { state.network.redraw(); }, 260);
+  }
+});
+
+setTimeout(checkChatServer, 1500);
 </script>
 </body>
 </html>

@@ -11,6 +11,7 @@ Aligned to **TOGAF** conventions. Aimed at **governance and clarity**, not infra
 ├── specification.md            # Full system specification
 ├── specification-visualiser.md # Visualiser specification
 ├── visualiser.html             # Single-file graph visualiser (open in browser)
+├── ea-chat-server.py           # Read-only AI chat server for querying the repository
 ├── AGENTS.md                   # Instructions for AI coding agents
 ├── catalogs/
 │   ├── BusinessUnits/          # +-Meta.json
@@ -113,8 +114,8 @@ A single-file HTML application that loads catalogs from the repo and renders the
 ### How to Use
 
 1. Clone the repo: `git clone <repo-url>`
-2. Open `visualiser.html` in Chrome or Edge
-3. Click **Open Repository** and select the cloned repo folder
+2. Start the chat server: `python3 ea-chat-server.py`
+3. Open `http://localhost:8765/` in Chrome or Edge
 4. Check catalogs in the sidebar to add nodes to the graph
 5. Click any node to see its full details with resolved references
 
@@ -131,8 +132,48 @@ A single-file HTML application that loads catalogs from the repo and renders the
 | **Hover highlight** | Hover a node to highlight connected nodes and dim the rest |
 | **Dark / light theme** | Toggle in the header. Preference saved to localStorage |
 | **Start empty** | Canvas is blank until you select catalogs — build the view incrementally |
+| **AI Chat** | Right-hand panel connects to a local Ollama LLM for asking questions about the repository |
 
 ---
+
+## AI Chat Server
+
+A read-only AI assistant that answers questions about the EA repository using a local Ollama LLM. It uses a text-based lazy-load protocol to keep context lean — only reading catalog data when needed.
+
+### How to Use
+
+```bash
+# Start the server (serves both the visualiser UI and the chat API)
+python3 ea-chat-server.py --port 8765 --model Qwen3.6:35b
+
+# Then open http://localhost:8765/ in your browser
+```
+
+### Features
+
+| Feature | Description |
+|---|---|
+| **Model selection** | Dropdown at top of chat panel lists all available Ollama models |
+| **Mid-session switching** | Change the model at any time — the next prompt uses the selected model |
+| **Streaming responses** | Tokens appear as they are generated, no waiting for full response |
+| **Text-based tool protocol** | Model requests specific data using `[[READ: CatalogName]]`, `[[GET: entry-id]]`, and `[[SEARCH: query]]` markers |
+| **Read-only** | Never modifies repository files |
+| **CORS-enabled** | Served from the same origin as the visualiser — no browser security issues |
+
+### Architecture
+
+```
+Browser (http://localhost:8765/)
+├── GET /              → serves visualiser.html
+├── GET /api/health    → returns { model, ollama status, available models }
+└── POST /api/chat     → streams tokens from Ollama, handles tool markers
+
+ea-chat-server.py
+├── Serves visualiser.html and static assets
+├── Builds compact system prompt from metamodel.json
+├── Reads catalog JSON files on demand (lazy-load)
+└── Forwards chat requests to Ollama at localhost:11434
+```
 
 ## Governance Rules
 
@@ -226,6 +267,6 @@ and suitability for an enterprise architecture context.
 
 | Phase | Description |
 |---|---|
-| **Natural Language Query** | Ask plain-English questions about the architecture |
+| **Natural Language Query** | ✅ Implemented — `ea-chat-server.py` + AI Chat panel in visualiser |
 | **Impact Analysis** | Automated assessment of what else a change affects |
 | **Change Approval Workflow** | Formal gates, scheduling, change advisory board routing |
