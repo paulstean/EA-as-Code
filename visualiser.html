@@ -48,6 +48,14 @@ html,body{height:100%;overflow:hidden;font-family:'Segoe UI',system-ui,-apple-sy
 header{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:var(--bg-secondary);border-bottom:1px solid var(--border);height:48px;flex-shrink:0}
 header h1{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px}
 #themeToggle{background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:16px;color:var(--text-primary)}
+.toolbar{display:flex;gap:6px}
+.toolbar button{background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:13px;color:var(--text-secondary);transition:all 0.15s}
+.toolbar button:hover{background:var(--hover-highlight);color:var(--text-primary);border-color:var(--accent)}
+.toolbar button:disabled{opacity:0.4;cursor:not-allowed}
+.popover-trigger{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.popover-trigger label{font-size:12px;color:var(--text-secondary);cursor:pointer}
+.popover-trigger .toggle-wrap{display:flex;align-items:center;gap:6px}
+.popover-trigger select{background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);font-size:12px;padding:2px 6px;cursor:pointer}
 
 /* Main layout */
 #app{display:flex;flex-direction:column;height:100vh}
@@ -149,6 +157,10 @@ header h1{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px
 <header>
   <h1>&#x26A1; EA Visualiser</h1>
   <button id="themeToggle" title="Toggle theme">&#x2600;&#xFE0F;</button>
+  <div class="toolbar">
+    <button id="saveStateBtn" title="Save state to JSON" disabled>&#x1F4BE; Save</button>
+    <button id="loadStateBtn" title="Load state from JSON" disabled>&#x1F4C1; Load</button>
+  </div>
 </header>
 <div id="main">
   <aside id="sidebar">
@@ -208,6 +220,15 @@ header h1{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px
     <div>
       <strong style="font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);display:block;margin-bottom:6px">Legend</strong>
       <div id="legend"><div class="empty-catalogs">No catalogs loaded</div></div>
+    </div>
+    <div class="popover-trigger">
+      <label for="popoverMode">Popover trigger</label>
+      <div class="toggle-wrap">
+        <select id="popoverMode" disabled>
+          <option value="hover">Hover</option>
+          <option value="rightclick">Right-click</option>
+        </select>
+      </div>
     </div>
   </aside>
   <div id="graphContainer">
@@ -374,6 +395,14 @@ const detailPanel = $('#detailPanel');
 const dpTitle = $('#dpTitle');
 const dpBody = $('#dpBody');
 const dpClose = $('#dpClose');
+const saveStateBtn = $('#saveStateBtn');
+const loadStateBtn = $('#loadStateBtn');
+const popoverMode = $('#popoverMode');
+
+function showToast(msg, type) {
+  toast.textContent = msg;
+  toast.style.color = type === 'error' ? 'var(--error)' : 'var(--success)';
+}
 const themeToggle = $('#themeToggle');
 const repulsionSlider = $('#repulsionSlider');
 const repulsionValue = $('#repulsionValue');
@@ -519,6 +548,11 @@ async function loadFromHandle(handle) {
     openBtn.textContent = '\uD83D\uDCC2 Reopen';
     openBtn.className = '';
     openBtn.disabled = false;
+    saveStateBtn.disabled = false;
+    loadStateBtn.disabled = false;
+    const savedPopoverMode = localStorage.getItem('ea-vis-popover-mode');
+    popoverMode.value = savedPopoverMode || 'hover';
+    popoverMode.disabled = false;
     state.isLoading = false;
     repulsionSlider.value = repulsion;
     repulsionValue.textContent = repulsion;
@@ -633,6 +667,159 @@ function restoreSearch() {
   updateNodeColors();
 }
 
+// ─── Save / Load State JSON ───────────────────────────────────
+async function saveStateToJSON() {
+  if (!window.showSaveFilePicker) {
+    showToast('Save not supported in this browser (requires Chrome/Edge)', 'error');
+    return;
+  }
+  if (state.visibleEntries.size === 0) {
+    showToast('Nothing to save - select some catalog entries first', 'error');
+    return;
+  }
+  const positions = state.network ? state.network.getPositions() : {};
+  const stateObj = {
+    version: 1,
+    visibleEntries: [...state.visibleEntries],
+    expandedCatalogs: [...state.expandedCatalogs],
+    searchTerm: state.searchTerm,
+    physics: {
+      repulsion: parseInt(repulsionSlider.value),
+      spring: parseInt(springSlider.value),
+      gravity: parseFloat(gravitySlider.value),
+      damping: parseFloat(dampingSlider.value),
+      springConst: parseFloat(springConstSlider.value),
+      maxVel: parseInt(maxVelSlider.value),
+      curvature: parseFloat(curvatureSlider.value),
+    },
+    theme: document.documentElement.getAttribute('data-theme') || 'dark',
+    positions: positions,
+  };
+  const json = JSON.stringify(stateObj, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const handle = await window.showSaveFilePicker({
+    suggestedName: 'ea-vis-state.json',
+    types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }],
+  });
+  const writable = await handle.createWritable();
+  await writable.write(blob);
+  await writable.close();
+  showToast('State saved', 'success');
+}
+
+async function loadStateFromJSON() {
+  if (!window.showOpenFilePicker) {
+    showToast('Load not supported in this browser (requires Chrome/Edge)', 'error');
+    return;
+  }
+  try {
+    const [handle] = await window.showOpenFilePicker({
+      types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }],
+    });
+    const file = await handle.getFile();
+    const text = await file.text();
+    const obj = JSON.parse(text);
+    if (!obj.version || !Array.isArray(obj.visibleEntries)) {
+      throw new Error('Invalid state file');
+    }
+    const validIds = obj.visibleEntries.filter(id => !!state.entryMap[id]);
+    const missing = obj.visibleEntries.length - validIds.length;
+    if (validIds.length === 0) {
+      showToast('No entries in file exist in current repo', 'error');
+      return;
+    }
+    if (!confirm(`Found ${validIds.length} of ${obj.visibleEntries.length} saved entries${missing > 0 ? ` (${missing} missing)` : ''}. Apply state?`)) {
+      return;
+    }
+    if (obj.physics) {
+      if (obj.physics.repulsion !== undefined) repulsionSlider.value = obj.physics.repulsion;
+      if (obj.physics.spring !== undefined) springSlider.value = obj.physics.spring;
+      if (obj.physics.gravity !== undefined) gravitySlider.value = obj.physics.gravity;
+      if (obj.physics.damping !== undefined) dampingSlider.value = obj.physics.damping;
+      if (obj.physics.springConst !== undefined) springConstSlider.value = obj.physics.springConst;
+      if (obj.physics.maxVel !== undefined) maxVelSlider.value = obj.physics.maxVel;
+      if (obj.physics.curvature !== undefined) curvatureSlider.value = obj.physics.curvature;
+      if (state.network) {
+        state.network.setOptions({
+          physics: {
+            barnesHut: {
+              gravitationalConstant: -parseInt(repulsionSlider.value),
+              springLength: parseInt(springSlider.value),
+              centralGravity: parseFloat(gravitySlider.value),
+              damping: parseFloat(dampingSlider.value),
+              springConstant: parseFloat(springConstSlider.value),
+              maxVelocity: parseInt(maxVelSlider.value),
+            }
+          },
+          edges: { smooth: { type: 'curvedCW', roundness: parseFloat(curvatureSlider.value) } }
+        });
+      }
+      repulsionValue.textContent = repulsionSlider.value;
+      springValue.textContent = springSlider.value;
+      gravityValue.textContent = parseFloat(gravitySlider.value).toFixed(2);
+      dampingValue.textContent = parseFloat(dampingSlider.value).toFixed(2);
+      springConstValue.textContent = parseFloat(springConstSlider.value).toFixed(3);
+      maxVelValue.textContent = maxVelSlider.value;
+      curvatureValue.textContent = parseFloat(curvatureSlider.value).toFixed(2);
+    }
+    if (obj.theme) {
+      applyTheme(obj.theme);
+    }
+    state.dimmedNodes.clear();
+    state.visibleEntries.clear();
+    for (const id of validIds) {
+      if (!state.nodes.get(id)) {
+        addEntryToGraph(id);
+      } else {
+        state.visibleEntries.add(id);
+      }
+    }
+    if (obj.positions && state.network) {
+      state.network.setOptions({ physics: { enabled: false } });
+      const updates = [];
+      for (const id of state.visibleEntries) {
+        const pos = obj.positions[id];
+        if (pos && typeof pos.x === 'number' && typeof pos.y === 'number') {
+          updates.push({ id, x: pos.x, y: pos.y });
+        }
+      }
+      if (updates.length > 0) {
+        state.nodes.update(updates);
+      }
+      state.network.setOptions({ physics: { enabled: true } });
+    }
+    state.expandedCatalogs.clear();
+    for (const cat of (obj.expandedCatalogs || [])) {
+      state.expandedCatalogs.add(cat);
+    }
+    if (obj.searchTerm !== undefined) {
+      searchInput.value = obj.searchTerm;
+      state.searchTerm = obj.searchTerm;
+      const term = obj.searchTerm.trim().toLowerCase();
+      state.dimmedNodes.clear();
+      if (term.length > 0) {
+        for (const node of state.nodes.get()) {
+          const data = state.entryMap[node.id];
+          if (!data) continue;
+          const name = (data.entry.name || '').toLowerCase();
+          const desc = (data.entry.description || '').toLowerCase();
+          if (!name.includes(term) && !desc.includes(term)) {
+            state.dimmedNodes.add(node.id);
+          }
+        }
+      }
+      updateNodeColors();
+    }
+    updateNodeColors();
+    renderSidebar();
+    showToast(`State loaded (${validIds.length} entries)`, 'success');
+  } catch (e) {
+    if (e.name !== 'AbortError') {
+      showToast('Failed to load state: ' + (e.message || 'Unknown error'), 'error');
+    }
+  }
+}
+
 // ─── Graph ────────────────────────────────────────────────────
 function initGraph() {
   if (state.network) {
@@ -711,14 +898,6 @@ function initGraph() {
 
   state.network = new vis.Network(container, { nodes: state.nodes, edges: state.edges }, options);
 
-  state.network.on('click', function(params) {
-    if (params.nodes.length > 0) {
-      showDetail(params.nodes[0]);
-    } else {
-      closeDetail();
-    }
-  });
-
   state.network.on('hoverNode', function(params) {
     const connectedEdges = state.network.getConnectedEdges(params.node);
     const connectedNodes = state.network.getConnectedNodes(params.node);
@@ -742,15 +921,28 @@ function initGraph() {
       const hcolor = CATALOG_COLORS[hcat] || '#888';
       state.nodes.update({ id: params.node, color: { background: hexAlpha(hcolor, 0.4), border: hcolor } });
     }
-    const evt = params.event;
-    const mx = evt ? evt.clientX : (params.pointer.DOM.x + graphEl.getBoundingClientRect().left);
-    const my = evt ? evt.clientY : (params.pointer.DOM.y + graphEl.getBoundingClientRect().top);
-    showRelationPopover(params.node, mx, my);
+    if (popoverMode.value === 'hover') {
+      const evt = params.event;
+      const mx = evt ? evt.clientX : (params.pointer.DOM.x + graphEl.getBoundingClientRect().left);
+      const my = evt ? evt.clientY : (params.pointer.DOM.y + graphEl.getBoundingClientRect().top);
+      showRelationPopover(params.node, mx, my);
+    }
   });
 
   state.network.on('blurNode', function() {
     updateNodeColors();
-    hideRelationPopoverDelayed();
+    if (popoverMode.value === 'hover') hideRelationPopoverDelayed();
+  });
+
+  state.network.on('click', function(params) {
+    if (params.nodes.length > 0) {
+      showDetail(params.nodes[0]);
+    } else {
+      closeDetail();
+    }
+    if (popoverMode.value === 'rightclick') {
+      relPopover.style.display = 'none';
+    }
   });
 
   state.network.on('doubleClick', function(params) {
@@ -1302,6 +1494,26 @@ function renderSidebar() {
 
 // ─── One-time event wiring ────────────────────────────────────
 openBtn.addEventListener('click', loadRepository);
+saveStateBtn.addEventListener('click', saveStateToJSON);
+loadStateBtn.addEventListener('click', loadStateFromJSON);
+popoverMode.addEventListener('change', function() {
+  localStorage.setItem('ea-vis-popover-mode', this.value);
+  relPopover.style.display = 'none';
+  if (state.network) {
+    state.network.setOptions({ interaction: { hover: this.value === 'hover' } });
+  }
+});
+
+graphEl.addEventListener('contextmenu', function(e) {
+  if (popoverMode.value !== 'rightclick') return;
+  e.preventDefault();
+  if (!state.network) return;
+  const rect = graphEl.getBoundingClientRect();
+  const nodeId = state.network.getNodeAt({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+  if (!nodeId) return;
+  clearTimeout(popoverHideTimer);
+  showRelationPopover(nodeId, e.clientX, e.clientY);
+});
 
 repulsionSlider.addEventListener('input', function() {
   const val = parseInt(this.value);
