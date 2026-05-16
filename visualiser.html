@@ -219,7 +219,7 @@ header h1{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px
       </label>
       <label style="font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:8px">
         <span class="physics-label">Edge Curvature</span>
-        <input type="range" class="physics-slider" id="curvatureSlider" min="0" max="1" step="0.01" value="0.1" style="flex:1" disabled>
+        <input type="range" class="physics-slider" id="curvatureSlider" min="0" max="1" step="0.01" value="0.1" style="flex:1">
         <span id="curvatureValue" style="font-size:11px;color:var(--text-muted);min-width:50px;text-align:right">0.10</span>
       </label>
     </div>
@@ -547,7 +547,7 @@ async function loadFromHandle(handle) {
     restoreSearch();
     const physicsEnabled = restorePhysicsEnabled();
     physicsToggle.checked = physicsEnabled;
-    const sliders = [repulsionSlider, springSlider, gravitySlider, dampingSlider, springConstSlider, maxVelSlider, curvatureSlider];
+    const sliders = [repulsionSlider, springSlider, gravitySlider, dampingSlider, springConstSlider, maxVelSlider];
     sliders.forEach(s => s.disabled = !physicsEnabled);
     if (state.network) {
       state.network.setOptions({ physics: { enabled: physicsEnabled } });
@@ -777,7 +777,7 @@ async function loadStateFromJSON() {
     if (obj.physics) {
       if (obj.physics.enabled !== undefined) {
         physicsToggle.checked = obj.physics.enabled;
-        const sliders = [repulsionSlider, springSlider, gravitySlider, dampingSlider, springConstSlider, maxVelSlider, curvatureSlider];
+        const sliders = [repulsionSlider, springSlider, gravitySlider, dampingSlider, springConstSlider, maxVelSlider];
         sliders.forEach(s => s.disabled = !obj.physics.enabled);
       }
       if (obj.physics.repulsion !== undefined) repulsionSlider.value = obj.physics.repulsion;
@@ -1021,7 +1021,7 @@ function addEntryToGraph(entryId) {
   const pos = state.savedPositions[entryId] || state.flowPositions[entryId];
   state.nodes.add({
     id: entry.id,
-    label: `[${toTitle(catalog)}]\n<b>${entry.name.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</b>`,
+    label: `${toTitle(catalog)}\n<b>${entry.name.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</b>`,
     group: catalog,
     x: pos?.x,
     y: pos?.y,
@@ -1048,7 +1048,7 @@ function addCatalogAllToGraph(catalog) {
     const pos = state.savedPositions[entry.id] || state.flowPositions[entry.id];
     batch.push({
       id: entry.id,
-      label: `[${toTitle(catalog)}]\n<b>${entry.name.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</b>`,
+      label: `${toTitle(catalog)}\n<b>${entry.name.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</b>`,
       group: catalog,
       x: pos?.x,
       y: pos?.y,
@@ -1577,7 +1577,7 @@ graphEl.addEventListener('contextmenu', function(e) {
 physicsToggle.addEventListener('change', function() {
   const enabled = this.checked;
   localStorage.setItem('ea-vis-physics', enabled ? '1' : '0');
-  const sliders = [repulsionSlider, springSlider, gravitySlider, dampingSlider, springConstSlider, maxVelSlider, curvatureSlider];
+  const sliders = [repulsionSlider, springSlider, gravitySlider, dampingSlider, springConstSlider, maxVelSlider];
   sliders.forEach(s => s.disabled = !enabled);
   if (state.network) {
     state.network.setOptions({ physics: { enabled } });
