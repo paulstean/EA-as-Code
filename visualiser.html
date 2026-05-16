@@ -240,6 +240,10 @@ header h1{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px
 .chat-msg.assistant pre{background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;padding:8px 10px;overflow-x:auto;margin:6px 0;font-size:12px;line-height:1.4}
 .chat-msg.assistant pre code{background:none;padding:0;color:var(--text-primary)}
 .chat-msg.assistant ul,.chat-msg.assistant ol{margin:4px 0;padding-left:18px}
+.chat-msg.assistant table{border-collapse:collapse;margin:6px 0;font-size:12px;width:auto;max-width:100%;overflow-x:auto;display:block}
+.chat-msg.assistant table th,.chat-msg.assistant table td{border:1px solid var(--border);padding:4px 8px;text-align:left}
+.chat-msg.assistant table th{background:var(--bg-primary);font-weight:600;color:var(--accent)}
+.chat-msg.assistant table tr:nth-child(even) td{background:rgba(0,0,0,0.15)}
 .chat-msg.assistant li{margin:2px 0}
 .chat-msg.assistant p{margin:4px 0}
 .chat-msg.assistant p:first-child{margin-top:0}
@@ -2792,7 +2796,12 @@ async function checkChatServer() {
           opt.textContent = m;
           modelSelect.appendChild(opt);
         }
-        modelSelect.value = chatModel;
+        if ([...modelSelect.options].some(o => o.value === 'qwen3.5:latest')) {
+          modelSelect.value = 'qwen3.5:latest';
+          chatModel = 'qwen3.5:latest';
+        } else if (chatModel && [...modelSelect.options].some(o => o.value === chatModel)) {
+          modelSelect.value = chatModel;
+        }
       }
       modelSelect.disabled = isStreaming;
     } else {
@@ -2807,6 +2816,27 @@ async function checkChatServer() {
 
 function renderMarkdown(text) {
   var html = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  // Tables (before code blocks to avoid matching pipes inside code)
+  html = html.replace(/(\|.+\|)(\n\|[-: |]+\|(\n\|.+\|)*)?/g, function(match) {
+    var lines = match.split('\n').filter(function(l) { return l.trim(); });
+    if (lines.length < 2) return match;
+    var thead = '';
+    var tbody = '';
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i];
+      if (line.match(/^\|[-: |]+\|$/)) continue;
+      var cells = line.split('|').filter(function(c) { return c.trim() !== ''; });
+      cells = cells.map(function(c) { return c.trim(); });
+      var tag = i === 0 ? 'th' : 'td';
+      var rowHtml = cells.map(function(c) { return '<' + tag + '>' + c + '</' + tag + '>'; }).join('');
+      if (i === 0) thead = '<thead><tr>' + rowHtml + '</tr></thead>';
+      else tbody += '<tr>' + rowHtml + '</tr>';
+    }
+    var table = '<table>' + thead + (tbody ? '<tbody>' + tbody + '</tbody>' : '') + '</table>';
+    return table;
+  });
+
   html = html.replace(/```(\w*)\n?([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
   html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
   html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
@@ -2818,8 +2848,8 @@ function renderMarkdown(text) {
   html = html.replace(/\n\n+/g, '</p><p>');
   html = html.replace(/\n/g, '<br>');
   if (html.indexOf('<') !== 0) html = '<p>' + html + '</p>';
-  html = html.replace(/<\/p>\n?<(ul|ol)>/g, '<$1>');
-  html = html.replace( /<\/(ul|ol)>\n?<p>/g, '</$1>');
+  html = html.replace(/<\/p>\n?<(ul|ol|table)>/g, '<$1>');
+  html = html.replace(/<\/(ul|ol|table)>\n?<p>/g, '</$1>');
   return html;
 }
 
