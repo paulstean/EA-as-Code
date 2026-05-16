@@ -57,6 +57,37 @@ header h1{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px
 .popover-trigger .toggle-wrap{display:flex;align-items:center;gap:6px}
 .popover-trigger select{background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);font-size:12px;padding:2px 6px;cursor:pointer}
 
+/* Tab bar */
+#tabBar{display:none;align-items:center;background:var(--bg-primary);border-bottom:1px solid var(--border);height:32px;flex-shrink:0;overflow:hidden}
+.tabs-scroll{display:flex;align-items:center;flex:1;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin}
+.tabs-scroll::-webkit-scrollbar{height:2px}
+.tabs-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:1px}
+.tab{display:flex;align-items:center;gap:4px;padding:4px 10px;font-size:12px;color:var(--text-secondary);cursor:pointer;border-right:1px solid var(--border);white-space:nowrap;user-select:none;transition:background 0.12s;min-width:0}
+.tab:hover{background:var(--hover-highlight)}
+.tab.active{background:var(--bg-secondary);color:var(--accent);font-weight:600}
+.tab-name{overflow:hidden;text-overflow:ellipsis}
+.tab-close{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;padding:0 2px;line-height:1;opacity:0;transition:opacity 0.12s;flex-shrink:0}
+.tab:hover .tab-close{opacity:1}
+.tab-close:hover{color:var(--error)}
+#newTabBtn{background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:18px;padding:0 12px;height:100%;transition:color 0.12s;flex-shrink:0}
+#newTabBtn:hover{color:var(--accent)}
+.tab-edit-input{background:var(--bg-primary);border:1px solid var(--accent);border-radius:3px;color:var(--text-primary);font-size:12px;padding:1px 4px;width:80px;outline:none}
+
+/* Modal overlay */
+.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:3000;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal-box{background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;padding:20px;min-width:320px;max-width:420px;box-shadow:0 12px 40px rgba(0,0,0,0.5)}
+.modal-title{font-size:15px;font-weight:600;margin-bottom:12px;color:var(--text-primary)}
+.modal-body{font-size:13px;color:var(--text-secondary);margin-bottom:16px;line-height:1.5}
+.modal-options{display:flex;flex-direction:column;gap:8px}
+.modal-btn{background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;padding:8px 14px;cursor:pointer;font-size:13px;color:var(--text-primary);text-align:left;transition:all 0.12s}
+.modal-btn:hover{background:var(--hover-highlight);border-color:var(--accent)}
+.modal-btn-cancel{background:transparent;border:1px solid var(--border);border-radius:6px;padding:8px 14px;cursor:pointer;font-size:13px;color:var(--text-muted);text-align:center;transition:all 0.12s}
+.modal-btn-cancel:hover{color:var(--text-primary);border-color:var(--text-muted)}
+.modal-footer{display:flex;gap:8px;margin-top:12px;justify-content:flex-end}
+.modal-btn-warn{background:var(--error);border:1px solid var(--error);border-radius:6px;padding:8px 14px;cursor:pointer;font-size:13px;color:#fff;text-align:center;transition:all 0.12s;font-weight:600}
+.modal-btn-warn:hover{opacity:0.85}
+
 /* Main layout */
 #app{display:flex;flex-direction:column;height:100vh}
 
@@ -162,6 +193,9 @@ header h1{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px
     <button id="loadStateBtn" title="Load state from JSON" disabled>&#x1F4C1; Load</button>
   </div>
 </header>
+<div id="tabBar">
+  <div class="tabs-scroll" id="tabsScroll"></div>
+</div>
 <div id="main">
   <aside id="sidebar">
     <div>
@@ -252,6 +286,14 @@ header h1{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px
 </aside>
 </div>
 
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <div class="modal-title" id="modalTitle"></div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer" id="modalFooter"></div>
+  </div>
+</div>
+
 <script>
 // ─── Constants ────────────────────────────────────────────────
 const CATALOG_COLORS = {
@@ -338,6 +380,9 @@ const state = {
   loadedCatalogNames: [],
   flowPositions: {},
   savedPositions: {},
+  tabs: [],
+  activeTabId: null,
+  tabLoadGuard: false,
 };
 
 // ─── IndexedDB helpers ────────────────────────────────────────
@@ -370,21 +415,6 @@ async function dbGet(key) {
   });
 }
 
-// ─── Save / Restore helpers ───────────────────────────────────
-function saveState() {
-  try {
-    localStorage.setItem('ea-vis-visible', [...state.visibleEntries].join(','));
-    localStorage.setItem('ea-vis-expanded', [...state.expandedCatalogs].join(','));
-    localStorage.setItem('ea-vis-search', state.searchTerm);
-    localStorage.setItem('ea-vis-spring', springSlider.value);
-    localStorage.setItem('ea-vis-gravity', gravitySlider.value);
-    localStorage.setItem('ea-vis-damping', dampingSlider.value);
-    localStorage.setItem('ea-vis-spring-const', springConstSlider.value);
-    localStorage.setItem('ea-vis-max-vel', maxVelSlider.value);
-    localStorage.setItem('ea-vis-curvature', curvatureSlider.value);
-  } catch (_) {}
-}
-
 // ─── DOM refs ─────────────────────────────────────────────────
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
@@ -405,6 +435,13 @@ const dpClose = $('#dpClose');
 const saveStateBtn = $('#saveStateBtn');
 const loadStateBtn = $('#loadStateBtn');
 const popoverMode = $('#popoverMode');
+const tabsScroll = $('#tabsScroll');
+const newTabBtn = $('#newTabBtn');
+const tabBar = $('#tabBar');
+const modalOverlay = $('#modalOverlay');
+const modalTitle = $('#modalTitle');
+const modalBody = $('#modalBody');
+const modalFooter = $('#modalFooter');
 
 function showToast(msg, type) {
   toast.textContent = msg;
@@ -442,6 +479,7 @@ function applyTheme(theme) {
 function toggleTheme() {
   const cur = document.documentElement.getAttribute('data-theme');
   applyTheme(cur === 'dark' ? 'light' : 'dark');
+  markTabDirty();
 }
 
 const savedTheme = localStorage.getItem('ea-vis-theme');
@@ -466,157 +504,390 @@ function toTitle(str) {
   return str.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase()).trim();
 }
 
-// ─── Directory loading (File System Access API) ───────────────
-async function loadFromHandle(handle) {
-  state.isLoading = true;
-  openBtn.disabled = true;
-  openBtn.textContent = '\uD83D\uDCC2 Loading\u2026';
-  openBtn.className = '';
-  toast.textContent = '';
+// ─── Tab Management ──────────────────────────────────────────
+function genTabId() {
+  return 'tab-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+}
+
+function getActiveTab() {
+  return state.tabs.find(t => t.id === state.activeTabId) || null;
+}
+
+function persistTabList() {
+  try {
+    localStorage.setItem('ea-vis-tabs', JSON.stringify(state.tabs));
+  } catch (_) {}
+}
+
+function markTabDirty() {
+  if (state.tabLoadGuard || !state.activeTabId) return;
+  const tab = getActiveTab();
+  if (tab && tab.saved) {
+    tab.saved = false;
+    persistTabList();
+    renderTabBar();
+  }
+}
+
+function markTabSaved() {
+  if (!state.activeTabId) return;
+  const tab = getActiveTab();
+  if (tab) {
+    tab.saved = true;
+    persistTabList();
+    renderTabBar();
+  }
+}
+
+function getActiveViewState() {
+  const positions = state.network ? state.network.getPositions() : {};
+  return {
+    visibleEntries: [...state.visibleEntries],
+    expandedCatalogs: [...state.expandedCatalogs],
+    searchTerm: state.searchTerm || '',
+    physics: {
+      enabled: physicsToggle.checked,
+      repulsion: parseInt(repulsionSlider.value),
+      spring: parseInt(springSlider.value),
+      gravity: parseFloat(gravitySlider.value),
+      damping: parseFloat(dampingSlider.value),
+      springConst: parseFloat(springConstSlider.value),
+      maxVel: parseInt(maxVelSlider.value),
+      curvature: parseFloat(curvatureSlider.value),
+    },
+    theme: document.documentElement.getAttribute('data-theme') || 'dark',
+    popoverMode: popoverMode.value,
+    positions: positions,
+  };
+}
+
+function saveTabViewState(tabId) {
+  const vs = getActiveViewState();
+  try {
+    localStorage.setItem('ea-vis-tab-' + tabId, JSON.stringify(vs));
+  } catch (_) {}
+}
+
+function loadTabViewState(tabId) {
+  try {
+    const raw = localStorage.getItem('ea-vis-tab-' + tabId);
+    return raw ? JSON.parse(raw) : null;
+  } catch (_) { return null; }
+}
+
+function getEmptyViewState() {
+  return {
+    visibleEntries: [],
+    expandedCatalogs: [],
+    searchTerm: '',
+    physics: {
+      enabled: true, repulsion: 800, spring: 150, gravity: 0.1,
+      damping: 0.09, springConst: 0.01, maxVel: 15, curvature: 0.1,
+    },
+    theme: document.documentElement.getAttribute('data-theme') || 'dark',
+    popoverMode: 'hover',
+    positions: {},
+  };
+}
+
+function applyViewState(vs) {
+  if (!state.network) return;
+  state.tabLoadGuard = true;
 
   try {
-    // Find metamodel.json
-    let mmHandle = null;
-    try { mmHandle = await handle.getFileHandle('metamodel.json'); } catch (_) {}
-    if (!mmHandle) { throw new Error('metamodel.json not found in the selected folder'); }
+    const idsToRemove = state.nodes.get().map(n => n.id);
+    if (idsToRemove.length > 0) state.nodes.remove(idsToRemove);
+    state.edges.clear();
+    state.visibleEntries.clear();
+    state.dimmedNodes.clear();
+    closeDetail();
 
-    const mmFile = await mmHandle.getFile();
-    const meta = JSON.parse(await mmFile.text());
-    state.meta = meta;
-
-    // Parse known catalog names from metamodel
-    const knownCatalogs = new Set((meta.entityTypes || []).map(e => e.catalog));
-    state.loadedCatalogNames = [];
-
-    // Walk catalogs directory
-    let catalogsDir = null;
-    try { catalogsDir = await handle.getDirectoryHandle('catalogs'); } catch (_) {}
-    if (!catalogsDir) { throw new Error('catalogs/ directory not found'); }
-
-    const loadedData = {};
-    for await (const [dirName, dirHandle] of catalogsDir.entries()) {
-      if (dirHandle.kind !== 'directory') continue;
-      if (!knownCatalogs.has(dirName)) continue;
-      try {
-        const fileHandle = await dirHandle.getFileHandle(dirName + '.json');
-        const file = await fileHandle.getFile();
-        const data = JSON.parse(await file.text());
-        if (!Array.isArray(data)) continue;
-        loadedData[dirName] = data;
-        state.loadedCatalogNames.push(dirName);
-      } catch (_) {}
+    const batch = [];
+    for (const id of (vs.visibleEntries || [])) {
+      const data = state.entryMap[id];
+      if (!data) continue;
+      const pos = vs.positions?.[id] || state.flowPositions[id];
+      batch.push({
+        id: id,
+        label: `${toTitle(data.catalog)}\n<b>${data.entry.name.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</b>`,
+        group: data.catalog,
+        x: pos?.x,
+        y: pos?.y,
+      });
+      state.visibleEntries.add(id);
     }
+    if (batch.length > 0) state.nodes.add(batch);
+    resolveEdges();
+    emptyState.style.display = state.visibleEntries.size === 0 ? 'block' : 'none';
 
-    if (state.loadedCatalogNames.length === 0) {
-      throw new Error('No matching catalog files found in catalogs/');
-    }
+    state.expandedCatalogs = new Set(vs.expandedCatalogs || []);
 
-    // Build state
-    state.entries = loadedData;
-    state.entryMap = {};
-    for (const [cat, entries] of Object.entries(loadedData)) {
-      for (const entry of entries) {
-        if (entry.id) state.entryMap[entry.id] = { entry, catalog: cat };
+    state.dimmedNodes.clear();
+    state.searchTerm = vs.searchTerm || '';
+    searchInput.value = state.searchTerm;
+    const term = state.searchTerm.trim().toLowerCase();
+    if (term.length > 0) {
+      for (const node of state.nodes.get()) {
+        const d = state.entryMap[node.id];
+        if (!d) continue;
+        const name = (d.entry.name || '').toLowerCase();
+        const desc = (d.entry.description || '').toLowerCase();
+        if (!name.includes(term) && !desc.includes(term)) state.dimmedNodes.add(node.id);
       }
     }
-    state.flowPositions = computeFlowPositions();
+    updateNodeColors();
 
-    // Persist handle for session restore
-    try { await dbSet('dirHandle', handle); } catch (_) {}
+    const p = vs.physics || {};
+    physicsToggle.checked = p.enabled !== false;
+    const pSliders = [repulsionSlider, springSlider, gravitySlider, dampingSlider, springConstSlider, maxVelSlider];
+    pSliders.forEach(s => s.disabled = !physicsToggle.checked);
 
-    // Init graph
-    initGraph();
-    renderSidebar();
+    if (p.repulsion !== undefined) repulsionSlider.value = p.repulsion;
+    if (p.spring !== undefined) springSlider.value = p.spring;
+    if (p.gravity !== undefined) gravitySlider.value = p.gravity;
+    if (p.damping !== undefined) dampingSlider.value = p.damping;
+    if (p.springConst !== undefined) springConstSlider.value = p.springConst;
+    if (p.maxVel !== undefined) maxVelSlider.value = p.maxVel;
+    if (p.curvature !== undefined) curvatureSlider.value = p.curvature;
 
-    // Load saved positions before adding nodes
-    loadSavedPositionsToState();
-
-    // Restore previous visual state
-    const repulsion = restoreRepulsion();
-    const spring = restoreSpring();
-    const gravity = restoreGravity();
-    const damping = restoreDamping();
-    const springConst = restoreSpringConst();
-    const maxVel = restoreMaxVel();
-    const curvature = restoreCurvature();
-    restoreVisibleEntries();
-    applySavedPositionsToNodes();
-    restoreExpandedCatalogs();
-    renderSidebar();
-
-    restoreSearch();
-    const physicsEnabled = restorePhysicsEnabled();
-    physicsToggle.checked = physicsEnabled;
-    const sliders = [repulsionSlider, springSlider, gravitySlider, dampingSlider, springConstSlider, maxVelSlider];
-    sliders.forEach(s => s.disabled = !physicsEnabled);
     if (state.network) {
-      state.network.setOptions({ physics: { enabled: physicsEnabled } });
+      state.network.setOptions({
+        physics: {
+          enabled: physicsToggle.checked,
+          barnesHut: {
+            gravitationalConstant: -parseInt(repulsionSlider.value),
+            springLength: parseInt(springSlider.value),
+            centralGravity: parseFloat(gravitySlider.value),
+            damping: parseFloat(dampingSlider.value),
+            springConstant: parseFloat(springConstSlider.value),
+            maxVelocity: parseInt(maxVelSlider.value),
+          }
+        },
+        edges: { smooth: { type: 'curvedCW', roundness: parseFloat(curvatureSlider.value) } }
+      });
     }
-    searchInput.disabled = false;
-    selectAllBar.style.display = 'flex';
-    toast.textContent = `Loaded ${state.loadedCatalogNames.length} catalogs from ${handle.name}`;
-    toast.style.color = 'var(--success)';
-    openBtn.textContent = '\uD83D\uDCC2 Reopen';
-    openBtn.className = '';
-    openBtn.disabled = false;
-    saveStateBtn.disabled = false;
-    loadStateBtn.disabled = false;
-    const savedPopoverMode = localStorage.getItem('ea-vis-popover-mode');
-    popoverMode.value = savedPopoverMode || 'hover';
-    popoverMode.disabled = false;
-    state.isLoading = false;
-    repulsionSlider.value = repulsion;
-    repulsionValue.textContent = repulsion;
-    springSlider.value = spring;
-    springValue.textContent = spring;
-    gravitySlider.value = gravity;
-    gravityValue.textContent = gravity.toFixed(2);
-    dampingSlider.value = damping;
-    dampingValue.textContent = damping.toFixed(2);
-    springConstSlider.value = springConst;
-    springConstValue.textContent = springConst.toFixed(3);
-    maxVelSlider.value = maxVel;
-    maxVelValue.textContent = maxVel;
-    curvatureSlider.value = curvature;
-    curvatureValue.textContent = curvature.toFixed(2);
-  } catch (err) {
-    state.isLoading = false;
-    openBtn.disabled = false;
-    openBtn.textContent = '\uD83D\uDCC2 Open Repository';
-    openBtn.className = 'error';
-    toast.textContent = err.message || 'Failed to load repository';
-    toast.style.color = 'var(--error)';
+
+    repulsionValue.textContent = repulsionSlider.value;
+    springValue.textContent = springSlider.value;
+    gravityValue.textContent = parseFloat(gravitySlider.value).toFixed(2);
+    dampingValue.textContent = parseFloat(dampingSlider.value).toFixed(2);
+    springConstValue.textContent = parseFloat(springConstSlider.value).toFixed(3);
+    maxVelValue.textContent = maxVelSlider.value;
+    curvatureValue.textContent = parseFloat(curvatureSlider.value).toFixed(2);
+
+    if (vs.theme) applyTheme(vs.theme);
+    if (vs.popoverMode) {
+      popoverMode.value = vs.popoverMode;
+    }
+
+    renderSidebar();
+  } finally {
+    state.tabLoadGuard = false;
   }
 }
 
-async function loadRepository() {
-  if (state.isLoading) return;
-  try {
-    const handle = await window.showDirectoryPicker({ mode: 'read', startIn: 'documents' });
-    await loadFromHandle(handle);
-  } catch (err) {
-    if (err.name === 'AbortError' || err.name === 'SecurityError') {
-      state.isLoading = false;
-      openBtn.disabled = false;
-      return;
-    }
-    state.isLoading = false;
-    openBtn.disabled = false;
-    openBtn.className = 'error';
-    toast.textContent = err.message || 'Failed to load repository';
-    toast.style.color = 'var(--error)';
-  }
+function selectTab(tabId) {
+  if (tabId === state.activeTabId || !state.network) return;
+  const tab = state.tabs.find(t => t.id === tabId);
+  if (!tab) return;
+
+  saveTabViewState(state.activeTabId);
+  state.activeTabId = tabId;
+  const vs = loadTabViewState(tabId) || getEmptyViewState();
+  applyViewState(vs);
+  persistTabList();
+  renderTabBar();
 }
 
-async function tryRestoreSession() {
-  try {
-    const handle = await dbGet('dirHandle');
-    if (!handle) return;
-    if (await handle.queryPermission({ mode: 'read' }) !== 'granted') {
-      const result = await handle.requestPermission({ mode: 'read' });
-      if (result !== 'granted') return;
+function createTab() {
+  const id = genTabId();
+  const n = state.tabs.length + 1;
+  const tab = { id, name: 'View ' + n, saved: false };
+  state.tabs.push(tab);
+  state.activeTabId = id;
+  const vs = getEmptyViewState();
+  localStorage.setItem('ea-vis-tab-' + id, JSON.stringify(vs));
+  applyViewState(vs);
+  persistTabList();
+  renderTabBar();
+}
+
+function closeTab(tabId) {
+  const idx = state.tabs.findIndex(t => t.id === tabId);
+  if (idx === -1) return;
+  if (state.tabs.length === 1) return;
+
+  if (!state.tabs[idx].saved) {
+    showConfirmModal(
+      'Unsaved Changes',
+      '"' + state.tabs[idx].name + '" has unsaved changes. Closing will discard them. Continue?',
+      function(proceed) {
+        if (proceed) doCloseTab(tabId);
+      }
+    );
+    return;
+  }
+  doCloseTab(tabId);
+}
+
+function doCloseTab(tabId) {
+  const idx = state.tabs.findIndex(t => t.id === tabId);
+  if (idx === -1) return;
+  state.tabs.splice(idx, 1);
+  localStorage.removeItem('ea-vis-tab-' + tabId);
+
+  if (state.activeTabId === tabId) {
+    const next = state.tabs[Math.min(idx, state.tabs.length - 1)];
+    state.activeTabId = next.id;
+    const vs = loadTabViewState(next.id) || getEmptyViewState();
+    applyViewState(vs);
+  }
+
+  persistTabList();
+  renderTabBar();
+}
+
+function renameTab(tabId, newName) {
+  const tab = state.tabs.find(t => t.id === tabId);
+  if (!tab) return;
+  tab.name = newName;
+  persistTabList();
+  renderTabBar();
+}
+
+function initTabs() {
+  const saved = localStorage.getItem('ea-vis-tabs');
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        state.tabs = parsed;
+        state.activeTabId = parsed[0].id;
+        const vs = loadTabViewState(parsed[0].id);
+        if (vs) {
+          applyViewState(vs);
+        }
+        renderTabBar();
+        tabBar.style.display = 'flex';
+        return;
+      }
+    } catch (_) {}
+  }
+
+  const oldVisible = localStorage.getItem('ea-vis-visible');
+  const id = genTabId();
+  if (oldVisible) {
+    const vs = {
+      visibleEntries: oldVisible.split(',').filter(Boolean),
+      expandedCatalogs: (localStorage.getItem('ea-vis-expanded') || '').split(',').filter(Boolean),
+      searchTerm: localStorage.getItem('ea-vis-search') || '',
+      physics: {
+        enabled: localStorage.getItem('ea-vis-physics') !== '0',
+        repulsion: restoreInt('ea-vis-repulsion', 800, 10, 2000),
+        spring: restoreInt('ea-vis-spring', 150, 10, 400),
+        gravity: restoreFloat('ea-vis-gravity', 0.1, 0, 1),
+        damping: restoreFloat('ea-vis-damping', 0.09, 0, 1),
+        springConst: restoreFloat('ea-vis-spring-const', 0.01, 0.001, 0.1),
+        maxVel: restoreInt('ea-vis-max-vel', 15, 1, 50),
+        curvature: restoreFloat('ea-vis-curvature', 0.1, 0, 1),
+      },
+      theme: localStorage.getItem('ea-vis-theme') || 'dark',
+      popoverMode: localStorage.getItem('ea-vis-popover-mode') || 'hover',
+      positions: (function() { try { return JSON.parse(localStorage.getItem('ea-vis-positions') || '{}'); } catch(_) { return {}; } })(),
+    };
+    state.tabs = [{ id, name: 'View 1', saved: false }];
+    state.activeTabId = id;
+    localStorage.setItem('ea-vis-tab-' + id, JSON.stringify(vs));
+    applyViewState(vs);
+  } else {
+    state.tabs = [{ id, name: 'View 1', saved: false }];
+    state.activeTabId = id;
+    const vs = getEmptyViewState();
+    localStorage.setItem('ea-vis-tab-' + id, JSON.stringify(vs));
+  }
+  persistTabList();
+  renderTabBar();
+  tabBar.style.display = 'flex';
+}
+
+function renderTabBar() {
+  let html = '';
+  for (const tab of state.tabs) {
+    const active = tab.id === state.activeTabId ? ' active' : '';
+    const name = tab.saved ? tab.name : tab.name + ' \u002A';
+    html += '<div class="tab' + active + '" data-id="' + tab.id + '"><span class="tab-name">' + name + '</span><button class="tab-close">&times;</button></div>';
+  }
+  tabsScroll.innerHTML = html;
+  var plus = document.createElement('button');
+  plus.id = 'newTabBtn';
+  plus.textContent = '+';
+  tabsScroll.appendChild(plus);
+}
+
+// ─── Modal Dialog ────────────────────────────────────────────
+function showOptionModal(title, body, options, cancelLabel) {
+  return new Promise(function(resolve) {
+    modalTitle.textContent = title;
+    modalBody.innerHTML = '<div class="modal-options">' + body + '</div>';
+    modalFooter.innerHTML = '';
+    var footerBtns = document.createElement('div');
+    footerBtns.style.cssText = 'display:flex;gap:8px;margin-top:12px;justify-content:flex-end';
+    if (cancelLabel) {
+      var cancelBtn = document.createElement('button');
+      cancelBtn.className = 'modal-btn-cancel';
+      cancelBtn.textContent = cancelLabel;
+      cancelBtn.addEventListener('click', function() { closeModal(); resolve(null); });
+      footerBtns.appendChild(cancelBtn);
     }
-    await loadFromHandle(handle);
+    for (var i = 0; i < options.length; i++) {
+      var opt = options[i];
+      var btn = document.createElement('button');
+      btn.className = opt.cls || 'modal-btn';
+      btn.textContent = opt.label;
+      btn.addEventListener('click', function(val) { return function() { closeModal(); resolve(val); }; }(opt.value));
+      footerBtns.appendChild(btn);
+    }
+    modalFooter.appendChild(footerBtns);
+    modalOverlay.classList.add('open');
+  });
+}
+
+function showConfirmModal(title, msg, callback) {
+  modalTitle.textContent = title;
+  modalBody.innerHTML = '<div style="font-size:13px;color:var(--text-secondary);line-height:1.5">' + msg + '</div>';
+  modalFooter.innerHTML = '';
+  var btns = document.createElement('div');
+  btns.style.cssText = 'display:flex;gap:8px;margin-top:12px;justify-content:flex-end';
+  var cancel = document.createElement('button');
+  cancel.className = 'modal-btn-cancel';
+  cancel.textContent = 'Cancel';
+  cancel.addEventListener('click', function() { closeModal(); callback(false); });
+  btns.appendChild(cancel);
+  var ok = document.createElement('button');
+  ok.className = 'modal-btn-warn';
+  ok.textContent = 'Proceed';
+  ok.addEventListener('click', function() { closeModal(); callback(true); });
+  btns.appendChild(ok);
+  modalFooter.appendChild(btns);
+  modalOverlay.classList.add('open');
+}
+
+function closeModal() {
+  modalOverlay.classList.remove('open');
+}
+
+// ─── Save / Restore helpers ───────────────────────────────────
+function saveState() {
+  try {
+    localStorage.setItem('ea-vis-visible', [...state.visibleEntries].join(','));
+    localStorage.setItem('ea-vis-expanded', [...state.expandedCatalogs].join(','));
+    localStorage.setItem('ea-vis-search', state.searchTerm);
+    localStorage.setItem('ea-vis-spring', springSlider.value);
+    localStorage.setItem('ea-vis-gravity', gravitySlider.value);
+    localStorage.setItem('ea-vis-damping', dampingSlider.value);
+    localStorage.setItem('ea-vis-spring-const', springConstSlider.value);
+    localStorage.setItem('ea-vis-max-vel', maxVelSlider.value);
+    localStorage.setItem('ea-vis-curvature', curvatureSlider.value);
   } catch (_) {}
 }
 
@@ -709,8 +980,8 @@ function restoreSearch() {
   updateNodeColors();
 }
 
-// ─── Save / Load State JSON ───────────────────────────────────
-async function saveStateToJSON() {
+// ─── Tab-aware save/load ─────────────────────────────────────
+async function saveActiveTabToJSON() {
   if (!window.showSaveFilePicker) {
     showToast('Save not supported in this browser (requires Chrome/Edge)', 'error');
     return;
@@ -719,154 +990,299 @@ async function saveStateToJSON() {
     showToast('Nothing to save - select some catalog entries first', 'error');
     return;
   }
-  const positions = state.network ? state.network.getPositions() : {};
-  const stateObj = {
+  var vs = getActiveViewState();
+  var stateObj = {
     version: 1,
-    visibleEntries: [...state.visibleEntries],
-    expandedCatalogs: [...state.expandedCatalogs],
-    searchTerm: state.searchTerm,
-    physics: {
-      enabled: physicsToggle.checked,
-      repulsion: parseInt(repulsionSlider.value),
-      spring: parseInt(springSlider.value),
-      gravity: parseFloat(gravitySlider.value),
-      damping: parseFloat(dampingSlider.value),
-      springConst: parseFloat(springConstSlider.value),
-      maxVel: parseInt(maxVelSlider.value),
-      curvature: parseFloat(curvatureSlider.value),
-    },
-    theme: document.documentElement.getAttribute('data-theme') || 'dark',
-    positions: positions,
+    visibleEntries: vs.visibleEntries,
+    expandedCatalogs: vs.expandedCatalogs,
+    searchTerm: vs.searchTerm,
+    physics: vs.physics,
+    theme: vs.theme,
+    positions: vs.positions,
   };
-  const json = JSON.stringify(stateObj, null, 2);
-  const blob = new Blob([json], { type: 'application/json' });
-  const handle = await window.showSaveFilePicker({
-    suggestedName: 'ea-vis-state.json',
-    types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }],
-  });
-  const writable = await handle.createWritable();
-  await writable.write(blob);
-  await writable.close();
-  showToast('State saved', 'success');
+  try {
+    var handle = await window.showSaveFilePicker({
+      suggestedName: 'ea-vis-state.json',
+      types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }],
+    });
+    var writable = await handle.createWritable();
+    await writable.write(new Blob([JSON.stringify(stateObj, null, 2)], { type: 'application/json' }));
+    await writable.close();
+    markTabSaved();
+    showToast('Tab state saved', 'success');
+  } catch (e) {
+    if (e.name !== 'AbortError') showToast('Save failed', 'error');
+  }
 }
 
-async function loadStateFromJSON() {
+async function saveAllTabsToJSON() {
+  if (!window.showSaveFilePicker) {
+    showToast('Save not supported in this browser (requires Chrome/Edge)', 'error');
+    return;
+  }
+  var tabStates = {};
+  saveTabViewState(state.activeTabId);
+  for (var i = 0; i < state.tabs.length; i++) {
+    var tab = state.tabs[i];
+    var raw = loadTabViewState(tab.id);
+    if (raw) tabStates[tab.id] = raw;
+  }
+  var stateObj = {
+    version: 1,
+    multiTab: true,
+    tabs: state.tabs.map(function(t) { return { id: t.id, name: t.name }; }),
+    tabStates: tabStates,
+  };
+  try {
+    var handle = await window.showSaveFilePicker({
+      suggestedName: 'ea-vis-all-tabs.json',
+      types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }],
+    });
+    var writable = await handle.createWritable();
+    await writable.write(new Blob([JSON.stringify(stateObj, null, 2)], { type: 'application/json' }));
+    await writable.close();
+    for (var j = 0; j < state.tabs.length; j++) state.tabs[j].saved = true;
+    persistTabList();
+    renderTabBar();
+    showToast('All tabs saved', 'success');
+  } catch (e) {
+    if (e.name !== 'AbortError') showToast('Save failed', 'error');
+  }
+}
+
+async function loadStateToActiveTab() {
   if (!window.showOpenFilePicker) {
     showToast('Load not supported in this browser (requires Chrome/Edge)', 'error');
     return;
   }
   try {
-    const [handle] = await window.showOpenFilePicker({
+    var [handle] = await window.showOpenFilePicker({
       types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }],
     });
-    const file = await handle.getFile();
-    const text = await file.text();
-    const obj = JSON.parse(text);
+    var file = await handle.getFile();
+    var text = await file.text();
+    var obj = JSON.parse(text);
+    if (obj.multiTab) {
+      showToast('This is a multi-tab file. Use "All tabs" option instead.', 'error');
+      return;
+    }
     if (!obj.version || !Array.isArray(obj.visibleEntries)) {
       throw new Error('Invalid state file');
     }
-    const validIds = obj.visibleEntries.filter(id => !!state.entryMap[id]);
-    const missing = obj.visibleEntries.length - validIds.length;
-    if (validIds.length === 0) {
-      showToast('No entries in file exist in current repo', 'error');
-      return;
+    var tab = getActiveTab();
+    if (tab && !tab.saved) {
+      var proceed = await new Promise(function(resolve) {
+        showConfirmModal(
+          'Unsaved Changes',
+          '"' + tab.name + '" has unsaved changes. Loading will discard them. Continue?',
+          resolve
+        );
+      });
+      if (!proceed) return;
     }
-    if (!confirm(`Found ${validIds.length} of ${obj.visibleEntries.length} saved entries${missing > 0 ? ` (${missing} missing)` : ''}. Apply state?`)) {
-      return;
-    }
-    if (obj.physics) {
-      if (obj.physics.enabled !== undefined) {
-        physicsToggle.checked = obj.physics.enabled;
-        const sliders = [repulsionSlider, springSlider, gravitySlider, dampingSlider, springConstSlider, maxVelSlider];
-        sliders.forEach(s => s.disabled = !obj.physics.enabled);
-      }
-      if (obj.physics.repulsion !== undefined) repulsionSlider.value = obj.physics.repulsion;
-      if (obj.physics.spring !== undefined) springSlider.value = obj.physics.spring;
-      if (obj.physics.gravity !== undefined) gravitySlider.value = obj.physics.gravity;
-      if (obj.physics.damping !== undefined) dampingSlider.value = obj.physics.damping;
-      if (obj.physics.springConst !== undefined) springConstSlider.value = obj.physics.springConst;
-      if (obj.physics.maxVel !== undefined) maxVelSlider.value = obj.physics.maxVel;
-      if (obj.physics.curvature !== undefined) curvatureSlider.value = obj.physics.curvature;
-      if (state.network) {
-        state.network.setOptions({
-          physics: {
-            enabled: obj.physics.enabled !== undefined ? obj.physics.enabled : true,
-            barnesHut: {
-              gravitationalConstant: -parseInt(repulsionSlider.value),
-              springLength: parseInt(springSlider.value),
-              centralGravity: parseFloat(gravitySlider.value),
-              damping: parseFloat(dampingSlider.value),
-              springConstant: parseFloat(springConstSlider.value),
-              maxVelocity: parseInt(maxVelSlider.value),
-            }
-          },
-          edges: { smooth: { type: 'curvedCW', roundness: parseFloat(curvatureSlider.value) } }
-        });
-      }
-      repulsionValue.textContent = repulsionSlider.value;
-      springValue.textContent = springSlider.value;
-      gravityValue.textContent = parseFloat(gravitySlider.value).toFixed(2);
-      dampingValue.textContent = parseFloat(dampingSlider.value).toFixed(2);
-      springConstValue.textContent = parseFloat(springConstSlider.value).toFixed(3);
-      maxVelValue.textContent = maxVelSlider.value;
-      curvatureValue.textContent = parseFloat(curvatureSlider.value).toFixed(2);
-    }
-    if (obj.theme) {
-      applyTheme(obj.theme);
-    }
-    state.dimmedNodes.clear();
-    state.visibleEntries.clear();
-    for (const id of validIds) {
-      if (!state.nodes.get(id)) {
-        addEntryToGraph(id);
-      } else {
-        state.visibleEntries.add(id);
-      }
-    }
-    if (obj.positions && state.network) {
-      state.network.setOptions({ physics: { enabled: false } });
-      const updates = [];
-      for (const id of state.visibleEntries) {
-        const pos = obj.positions[id];
-        if (pos && typeof pos.x === 'number' && typeof pos.y === 'number') {
-          updates.push({ id, x: pos.x, y: pos.y });
-        }
-      }
-      if (updates.length > 0) {
-        state.nodes.update(updates);
-      }
-      state.network.setOptions({ physics: { enabled: true } });
-    }
-    state.expandedCatalogs.clear();
-    for (const cat of (obj.expandedCatalogs || [])) {
-      state.expandedCatalogs.add(cat);
-    }
-    if (obj.searchTerm !== undefined) {
-      searchInput.value = obj.searchTerm;
-      state.searchTerm = obj.searchTerm;
-      const term = obj.searchTerm.trim().toLowerCase();
-      state.dimmedNodes.clear();
-      if (term.length > 0) {
-        for (const node of state.nodes.get()) {
-          const data = state.entryMap[node.id];
-          if (!data) continue;
-          const name = (data.entry.name || '').toLowerCase();
-          const desc = (data.entry.description || '').toLowerCase();
-          if (!name.includes(term) && !desc.includes(term)) {
-            state.dimmedNodes.add(node.id);
-          }
-        }
-      }
-      updateNodeColors();
-    }
-    updateNodeColors();
-    renderSidebar();
-    showToast(`State loaded (${validIds.length} entries)`, 'success');
+    applyJSONViewState(obj);
+    markTabSaved();
+    showToast('State loaded', 'success');
   } catch (e) {
     if (e.name !== 'AbortError') {
       showToast('Failed to load state: ' + (e.message || 'Unknown error'), 'error');
     }
   }
+}
+
+async function loadStateToAllTabs() {
+  if (!window.showOpenFilePicker) {
+    showToast('Load not supported in this browser (requires Chrome/Edge)', 'error');
+    return;
+  }
+  try {
+    var [handle] = await window.showOpenFilePicker({
+      types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }],
+    });
+    var file = await handle.getFile();
+    var text = await file.text();
+    var obj = JSON.parse(text);
+    if (!obj.version) throw new Error('Invalid state file');
+
+    if (obj.multiTab) {
+      if (!obj.tabs || !obj.tabStates) throw new Error('Invalid multi-tab file');
+      for (var i = 0; i < state.tabs.length; i++) {
+        if (!state.tabs[i].saved) {
+          var p = await new Promise(function(resolve) {
+            showConfirmModal(
+              'Unsaved Changes',
+              '"' + state.tabs[i].name + '" has unsaved changes. Loading will discard them. Continue?',
+              resolve
+            );
+          });
+          if (!p) return;
+          break;
+        }
+      }
+      for (var j = 0; j < state.tabs.length; j++) {
+        localStorage.removeItem('ea-vis-tab-' + state.tabs[j].id);
+      }
+      state.tabs = obj.tabs.map(function(t) { return { id: t.id, name: t.name, saved: true }; });
+      state.activeTabId = state.tabs[0].id;
+      for (var k = 0; k < state.tabs.length; k++) {
+        var vs = obj.tabStates[state.tabs[k].id];
+        if (vs) localStorage.setItem('ea-vis-tab-' + state.tabs[k].id, JSON.stringify(vs));
+      }
+      persistTabList();
+      var firstVs = loadTabViewState(state.activeTabId);
+      if (firstVs) applyViewState(firstVs);
+      renderTabBar();
+      showToast('All tabs loaded', 'success');
+    } else {
+      if (!Array.isArray(obj.visibleEntries)) throw new Error('Invalid state file');
+      applyJSONViewState(obj);
+      markTabSaved();
+      showToast('State loaded', 'success');
+    }
+  } catch (e) {
+    if (e.name !== 'AbortError') {
+      showToast('Failed to load state: ' + (e.message || 'Unknown error'), 'error');
+    }
+  }
+}
+
+function applyJSONViewState(obj) {
+  var validIds = obj.visibleEntries.filter(function(id) { return !!state.entryMap[id]; });
+  if (validIds.length === 0) {
+    showToast('No entries in file exist in current repo', 'error');
+    return;
+  }
+  var missing = obj.visibleEntries.length - validIds.length;
+  if (!confirm('Found ' + validIds.length + ' of ' + obj.visibleEntries.length + ' saved entries' + (missing > 0 ? ' (' + missing + ' missing)' : '') + '. Apply state?')) {
+    return;
+  }
+  var vs = {
+    visibleEntries: validIds,
+    expandedCatalogs: obj.expandedCatalogs || [],
+    searchTerm: obj.searchTerm || '',
+    physics: obj.physics || getEmptyViewState().physics,
+    theme: obj.theme || 'dark',
+    popoverMode: obj.popoverMode || 'hover',
+    positions: obj.positions || {},
+  };
+  applyViewState(vs);
+}
+
+// ─── Directory loading (File System Access API) ───────────────
+async function loadFromHandle(handle) {
+  state.isLoading = true;
+  openBtn.disabled = true;
+  openBtn.textContent = '\uD83D\uDCC2 Loading\u2026';
+  openBtn.className = '';
+  toast.textContent = '';
+
+  try {
+    // Find metamodel.json
+    let mmHandle = null;
+    try { mmHandle = await handle.getFileHandle('metamodel.json'); } catch (_) {}
+    if (!mmHandle) { throw new Error('metamodel.json not found in the selected folder'); }
+
+    const mmFile = await mmHandle.getFile();
+    const meta = JSON.parse(await mmFile.text());
+    state.meta = meta;
+
+    // Parse known catalog names from metamodel
+    const knownCatalogs = new Set((meta.entityTypes || []).map(e => e.catalog));
+    state.loadedCatalogNames = [];
+
+    // Walk catalogs directory
+    let catalogsDir = null;
+    try { catalogsDir = await handle.getDirectoryHandle('catalogs'); } catch (_) {}
+    if (!catalogsDir) { throw new Error('catalogs/ directory not found'); }
+
+    const loadedData = {};
+    for await (const [dirName, dirHandle] of catalogsDir.entries()) {
+      if (dirHandle.kind !== 'directory') continue;
+      if (!knownCatalogs.has(dirName)) continue;
+      try {
+        const fileHandle = await dirHandle.getFileHandle(dirName + '.json');
+        const file = await fileHandle.getFile();
+        const data = JSON.parse(await file.text());
+        if (!Array.isArray(data)) continue;
+        loadedData[dirName] = data;
+        state.loadedCatalogNames.push(dirName);
+      } catch (_) {}
+    }
+
+    if (state.loadedCatalogNames.length === 0) {
+      throw new Error('No matching catalog files found in catalogs/');
+    }
+
+    // Build state
+    state.entries = loadedData;
+    state.entryMap = {};
+    for (const [cat, entries] of Object.entries(loadedData)) {
+      for (const entry of entries) {
+        if (entry.id) state.entryMap[entry.id] = { entry, catalog: cat };
+      }
+    }
+    state.flowPositions = computeFlowPositions();
+
+    // Persist handle for session restore
+    try { await dbSet('dirHandle', handle); } catch (_) {}
+
+    // Init graph
+    initGraph();
+    renderSidebar();
+
+    // Restore tabs (handles entries, positions, physics, theme, popover mode, etc.)
+    initTabs();
+
+    searchInput.disabled = false;
+    selectAllBar.style.display = 'flex';
+    toast.textContent = `Loaded ${state.loadedCatalogNames.length} catalogs from ${handle.name}`;
+    toast.style.color = 'var(--success)';
+    openBtn.textContent = '\uD83D\uDCC2 Reopen';
+    openBtn.className = '';
+    openBtn.disabled = false;
+    saveStateBtn.disabled = false;
+    loadStateBtn.disabled = false;
+    popoverMode.disabled = false;
+    state.isLoading = false;
+  } catch (err) {
+    state.isLoading = false;
+    openBtn.disabled = false;
+    openBtn.textContent = '\uD83D\uDCC2 Open Repository';
+    openBtn.className = 'error';
+    toast.textContent = err.message || 'Failed to load repository';
+    toast.style.color = 'var(--error)';
+  }
+}
+
+async function loadRepository() {
+  if (state.isLoading) return;
+  try {
+    const handle = await window.showDirectoryPicker({ mode: 'read', startIn: 'documents' });
+    await loadFromHandle(handle);
+  } catch (err) {
+    if (err.name === 'AbortError' || err.name === 'SecurityError') {
+      state.isLoading = false;
+      openBtn.disabled = false;
+      return;
+    }
+    state.isLoading = false;
+    openBtn.disabled = false;
+    openBtn.className = 'error';
+    toast.textContent = err.message || 'Failed to load repository';
+    toast.style.color = 'var(--error)';
+  }
+}
+
+async function tryRestoreSession() {
+  try {
+    const handle = await dbGet('dirHandle');
+    if (!handle) return;
+    if (await handle.queryPermission({ mode: 'read' }) !== 'granted') {
+      const result = await handle.requestPermission({ mode: 'read' });
+      if (result !== 'granted') return;
+    }
+    await loadFromHandle(handle);
+  } catch (_) {}
 }
 
 // ─── Graph ────────────────────────────────────────────────────
@@ -987,6 +1403,7 @@ function initGraph() {
 
   state.network.on('dragEnd', function() {
     savePositionsToLocalStorage();
+    if (!state.tabLoadGuard) markTabDirty();
   });
 
   state.network.on('stabilizationIterationsDone', function() {
@@ -1029,6 +1446,7 @@ function addEntryToGraph(entryId) {
   state.visibleEntries.add(entryId);
   resolveEdges();
   emptyState.style.display = 'none';
+  markTabDirty();
 }
 
 function removeEntryFromGraph(entryId) {
@@ -1038,6 +1456,7 @@ function removeEntryFromGraph(entryId) {
   state.visibleEntries.delete(entryId);
   if (state.visibleEntries.size === 0) emptyState.style.display = 'block';
   if (state.selectedNodeId === entryId) closeDetail();
+  markTabDirty();
 }
 
 function addCatalogAllToGraph(catalog) {
@@ -1059,6 +1478,7 @@ function addCatalogAllToGraph(catalog) {
   state.nodes.add(batch);
   resolveEdges();
   emptyState.style.display = 'none';
+  markTabDirty();
 }
 
 function removeCatalogAllFromGraph(catalog) {
@@ -1070,6 +1490,7 @@ function removeCatalogAllFromGraph(catalog) {
   for (const id of ids) state.visibleEntries.delete(id);
   if (state.visibleEntries.size === 0) emptyState.style.display = 'block';
   if (state.selectedNodeId && idSet.has(state.selectedNodeId)) closeDetail();
+  markTabDirty();
 }
 
 // ─── Hover popover ────────────────────────────────────────────
@@ -1447,6 +1868,7 @@ searchInput.addEventListener('input', function() {
       }
     }
     updateNodeColors();
+    markTabDirty();
   }, 150);
 });
 
@@ -1498,6 +1920,7 @@ function renderSidebar() {
       } else {
         state.expandedCatalogs.delete(cat);
       }
+      markTabDirty();
     });
   });
 
@@ -1553,19 +1976,18 @@ function renderSidebar() {
 
 // ─── One-time event wiring ────────────────────────────────────
 openBtn.addEventListener('click', loadRepository);
-saveStateBtn.addEventListener('click', saveStateToJSON);
-loadStateBtn.addEventListener('click', loadStateFromJSON);
 popoverMode.addEventListener('change', function() {
   localStorage.setItem('ea-vis-popover-mode', this.value);
   relPopover.style.display = 'none';
   if (state.network) {
     state.network.setOptions({ interaction: { hover: this.value === 'hover' } });
   }
+  markTabDirty();
 });
 
 graphEl.addEventListener('contextmenu', function(e) {
-  if (popoverMode.value !== 'rightclick') return;
   e.preventDefault();
+  if (popoverMode.value !== 'rightclick') return;
   if (!state.network) return;
   const rect = graphEl.getBoundingClientRect();
   const nodeId = state.network.getNodeAt({ x: e.clientX - rect.left, y: e.clientY - rect.top });
@@ -1582,6 +2004,7 @@ physicsToggle.addEventListener('change', function() {
   if (state.network) {
     state.network.setOptions({ physics: { enabled } });
   }
+  markTabDirty();
 });
 
 repulsionSlider.addEventListener('input', function() {
@@ -1593,6 +2016,7 @@ repulsionSlider.addEventListener('input', function() {
       physics: { barnesHut: { gravitationalConstant: -val } }
     });
   }
+  markTabDirty();
 });
 
 springSlider.addEventListener('input', function() {
@@ -1604,6 +2028,7 @@ springSlider.addEventListener('input', function() {
       physics: { barnesHut: { springLength: val } }
     });
   }
+  markTabDirty();
 });
 
 gravitySlider.addEventListener('input', function() {
@@ -1615,6 +2040,7 @@ gravitySlider.addEventListener('input', function() {
       physics: { barnesHut: { centralGravity: val } }
     });
   }
+  markTabDirty();
 });
 
 dampingSlider.addEventListener('input', function() {
@@ -1626,6 +2052,7 @@ dampingSlider.addEventListener('input', function() {
       physics: { barnesHut: { damping: val } }
     });
   }
+  markTabDirty();
 });
 
 springConstSlider.addEventListener('input', function() {
@@ -1637,6 +2064,7 @@ springConstSlider.addEventListener('input', function() {
       physics: { barnesHut: { springConstant: val } }
     });
   }
+  markTabDirty();
 });
 
 maxVelSlider.addEventListener('input', function() {
@@ -1648,6 +2076,7 @@ maxVelSlider.addEventListener('input', function() {
       physics: { maxVelocity: val }
     });
   }
+  markTabDirty();
 });
 
 curvatureSlider.addEventListener('input', function() {
@@ -1659,6 +2088,7 @@ curvatureSlider.addEventListener('input', function() {
       edges: { smooth: { roundness: val } }
     });
   }
+  markTabDirty();
 });
 
 selectAllBtn.addEventListener('click', function(e) {
@@ -1684,7 +2114,93 @@ deselectAllBtn.addEventListener('click', function(e) {
   }
 });
 
+// ─── Tab bar event wiring ────────────────────────────────────
+tabsScroll.addEventListener('click', function(e) {
+  var tabEl = e.target.closest('.tab');
+  if (!tabEl) return;
+  if (e.target.closest('.tab-close')) {
+    closeTab(tabEl.dataset.id);
+    return;
+  }
+  selectTab(tabEl.dataset.id);
+});
+
+tabsScroll.addEventListener('dblclick', function(e) {
+  var tabEl = e.target.closest('.tab');
+  if (!tabEl) return;
+  var nameSpan = tabEl.querySelector('.tab-name');
+  if (!nameSpan) return;
+  var currentName = state.tabs.find(function(t) { return t.id === tabEl.dataset.id; })?.name || nameSpan.textContent.replace(' \u002A', '');
+  var input = document.createElement('input');
+  input.className = 'tab-edit-input';
+  input.value = currentName;
+  input.style.width = Math.max(60, currentName.length * 8) + 'px';
+  nameSpan.replaceWith(input);
+  input.focus();
+  input.select();
+  function finish() {
+    var val = input.value.trim() || currentName;
+    renameTab(tabEl.dataset.id, val);
+    nameSpan.textContent = val;
+    input.replaceWith(nameSpan);
+    renderTabBar();
+  }
+  input.addEventListener('blur', finish);
+  input.addEventListener('keydown', function(ev) {
+    if (ev.key === 'Enter') { input.blur(); }
+    if (ev.key === 'Escape') { input.value = currentName; input.blur(); }
+  });
+});
+
+tabsScroll.addEventListener('click', function(e) {
+  if (e.target.id === 'newTabBtn') {
+    createTab();
+  }
+});
+
+// ─── Tab-aware save/load button wiring ───────────────────────
+saveStateBtn.addEventListener('click', async function() {
+  if (!state.network) return;
+  var choice = await showOptionModal(
+    'Save State',
+    '',
+    [
+      { label: '\uD83D\uDCC4  Active tab only \u2014 "' + (getActiveTab()?.name || 'View') + '"', value: 'active' },
+      { label: '\uD83D\uDCCA  All ' + state.tabs.length + ' tabs', value: 'all' },
+    ],
+    'Cancel'
+  );
+  if (!choice) return;
+  if (choice === 'active') {
+    await saveActiveTabToJSON();
+  } else {
+    await saveAllTabsToJSON();
+  }
+});
+
+loadStateBtn.addEventListener('click', async function() {
+  if (!state.network) return;
+  var choice = await showOptionModal(
+    'Load State',
+    '',
+    [
+      { label: '\uD83D\uDCC4  Active tab only', value: 'active' },
+      { label: '\uD83D\uDCCA  All tabs (replace current)', value: 'all' },
+    ],
+    'Cancel'
+  );
+  if (!choice) return;
+  if (choice === 'active') {
+    await loadStateToActiveTab();
+  } else {
+    await loadStateToAllTabs();
+  }
+});
+
 window.addEventListener('beforeunload', function() {
+  if (state.activeTabId && state.network) {
+    saveTabViewState(state.activeTabId);
+  }
   savePositionsToLocalStorage();
 });
 
