@@ -181,6 +181,11 @@ header h1{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px
 #relPopover .pop-item .pop-swatch{width:8px;height:8px;border-radius:2px;flex-shrink:0}
 #relPopover .pop-item .pop-name{color:var(--text-primary);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #relPopover .pop-item .pop-desc{color:var(--text-secondary);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#relPopover .pop-fields{padding:6px 12px 8px;border-bottom:1px solid var(--border)}
+#relPopover .pop-fields-label{font-size:11px;color:var(--text-muted);margin-bottom:4px}
+#relPopover .pop-field-item{display:flex;align-items:center;gap:4px;font-size:12px;padding:1px 0;cursor:pointer}
+#relPopover .pop-field-item:hover{color:var(--accent)}
+#relPopover .pop-field-item input[type="checkbox"]{accent-color:var(--accent);cursor:pointer;margin:0;flex-shrink:0}
 
 /* Text box layer */
 #textBoxLayer{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:10}
@@ -510,6 +515,7 @@ const state = {
   tabs: [],
   activeTabId: null,
   tabLoadGuard: false,
+  catalogFields: {},  // catalogName -> [fieldName, ...], defaults to ['name']
   textBoxes: [],
   pendingCmd: null,  // stores {action, catalog, targets} from cmd_request event
 };
@@ -638,6 +644,45 @@ function toTitle(str) {
   return str.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase()).trim();
 }
 
+function escapeHtml(s) {
+  return String(s).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function buildNodeLabel(data) {
+  var cat = data.catalog, entry = data.entry;
+  var fields = state.catalogFields[cat];
+  if (!fields || fields.length === 0) fields = ['name'];
+  var label = '<b>' + toTitle(cat) + '</b>\n<b>' + escapeHtml(entry.name) + '</b>';
+  for (var i = 0; i < fields.length; i++) {
+    var f = fields[i];
+    if (f === 'name') continue;
+    var val = entry[f];
+    if (val == null) continue;
+    var display = Array.isArray(val) ? val.map(function(v) { return escapeHtml(v); }).join(', ') : escapeHtml(val);
+    label += '\n' + formatFieldName(f) + ': ' + display;
+  }
+  return label;
+}
+  return label;
+}
+
+function getCatalogEntryFields(catalog) {
+  var entries = state.entries[catalog];
+  if (!entries || entries.length === 0) return [];
+  var keys = Object.keys(entries[0]);
+  return keys.filter(function(k) { return k !== 'name'; });
+}
+
+function refreshNodeLabels(catalog) {
+  var nodes = state.nodes.get();
+  for (var i = 0; i < nodes.length; i++) {
+    var n = nodes[i];
+    var data = state.entryMap[n.id];
+    if (!data || data.catalog !== catalog) continue;
+    state.nodes.update({ id: n.id, label: buildNodeLabel(data) });
+  }
+}
+
 // ─── Tab Management ──────────────────────────────────────────
 function genTabId() {
   return 'tab-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
@@ -692,6 +737,7 @@ function getActiveViewState() {
     theme: document.documentElement.getAttribute('data-theme') || 'dark',
     popoverMode: popoverMode.value,
     positions: positions,
+    catalogFields: JSON.parse(JSON.stringify(state.catalogFields)),
     textBoxes: state.textBoxes.map(function(tb) { return { id: tb.id, text: tb.text, x: tb.x, y: tb.y, width: tb.width, height: tb.height, align: tb.align }; }),
   };
 }
@@ -722,6 +768,7 @@ function getEmptyViewState() {
     theme: document.documentElement.getAttribute('data-theme') || 'dark',
     popoverMode: 'hover',
     positions: {},
+    catalogFields: {},
     textBoxes: [],
   };
 }
@@ -745,7 +792,7 @@ function applyViewState(vs) {
       const pos = vs.positions?.[id] || state.flowPositions[id];
       batch.push({
         id: id,
-        label: `${toTitle(data.catalog)}\n<b>${data.entry.name.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</b>`,
+        label: buildNodeLabel(data),
         group: data.catalog,
         x: pos?.x,
         y: pos?.y,
@@ -817,6 +864,7 @@ function applyViewState(vs) {
     }
 
     state.textBoxes = vs.textBoxes ? vs.textBoxes.map(function(t) { return { id: t.id, text: t.text, x: t.x, y: t.y, width: t.width, height: t.height, align: t.align || 'left' }; }) : [];
+    state.catalogFields = vs.catalogFields || {};
     renderAllTextBoxes();
     renderSidebar();
   } finally {
@@ -1584,7 +1632,7 @@ function addEntryToGraph(entryId) {
   const pos = state.savedPositions[entryId] || state.flowPositions[entryId];
   state.nodes.add({
     id: entry.id,
-    label: `${toTitle(catalog)}\n<b>${entry.name.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</b>`,
+    label: buildNodeLabel(data),
     group: catalog,
     x: pos?.x,
     y: pos?.y,
@@ -1613,7 +1661,7 @@ function addCatalogAllToGraph(catalog) {
     const pos = state.savedPositions[entry.id] || state.flowPositions[entry.id];
     batch.push({
       id: entry.id,
-      label: `${toTitle(catalog)}\n<b>${entry.name.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</b>`,
+      label: buildNodeLabel({ entry: entry, catalog: catalog }),
       group: catalog,
       x: pos?.x,
       y: pos?.y,
@@ -1709,12 +1757,32 @@ function getRelatedNodes(nodeId) {
 
 function showRelationPopover(nodeId, x, y) {
   clearTimeout(popoverHideTimer);
+  var data = state.entryMap[nodeId];
+  var catalog = data ? data.catalog : null;
+  var html = '';
+
+  // Field selection section
+  if (catalog) {
+    var catFields = getCatalogEntryFields(catalog);
+    var selected = state.catalogFields[catalog];
+    if (!selected || selected.length === 0) selected = ['name'];
+    html += '<div class="pop-fields">';
+    html += '<div class="pop-fields-label">Node fields</div>';
+    html += '<label class="pop-field-item"><input type="checkbox" data-catalog="' + catalog + '" data-field="name" checked disabled> <span style="color:var(--text-muted)">Name</span></label>';
+    for (var fi = 0; fi < catFields.length; fi++) {
+      var fn = catFields[fi];
+      var checked = selected.indexOf(fn) !== -1 ? ' checked' : '';
+      html += '<label class="pop-field-item"><input type="checkbox" data-catalog="' + catalog + '" data-field="' + fn + '"' + checked + '> ' + formatFieldName(fn) + '</label>';
+    }
+    html += '</div>';
+  }
+
+  // Related nodes section
   const items = getRelatedNodes(nodeId);
-  let html;
   if (items.length === 0) {
-    html = '<div class="pop-empty">No hidden related nodes</div>';
+    html += '<div class="pop-empty">No hidden related nodes</div>';
   } else {
-    html = '<div class="pop-header">Hidden related nodes</div>';
+    html += '<div class="pop-header">Hidden related nodes</div>';
     for (const item of items) {
       const color = CATALOG_COLORS[item.catalog] || '#888';
       const arrow = item.dir === 'out' ? '&#8594;' : '&#8592;';
@@ -1739,6 +1807,27 @@ function showRelationPopover(nodeId, x, y) {
   if (py < 8) py = 8;
   relPopover.style.left = px + 'px';
   relPopover.style.top = py + 'px';
+
+  // Wire field checkbox changes
+  relPopover.querySelectorAll('.pop-field-item input[type="checkbox"]').forEach(function(cb) {
+    cb.addEventListener('change', function(e) {
+      e.stopPropagation();
+      var catalog = this.dataset.catalog;
+      var field = this.dataset.field;
+      if (!catalog || !field) return;
+      var selected = state.catalogFields[catalog];
+      if (!selected) selected = ['name'];
+      if (this.checked) {
+        if (selected.indexOf(field) === -1) selected.push(field);
+      } else {
+        selected = selected.filter(function(f) { return f !== field; });
+        if (selected.length === 0) selected = ['name'];
+      }
+      state.catalogFields[catalog] = selected;
+      refreshNodeLabels(catalog);
+      markTabDirty();
+    });
+  });
 
   // Wire clicks on items
   relPopover.querySelectorAll('.pop-item').forEach(el => {
