@@ -782,6 +782,7 @@ function applyViewState(vs) {
     state.visibleEntries.clear();
     state.dimmedNodes.clear();
     closeDetail();
+    state.nodeFields = vs.nodeFields || {};
 
     const batch = [];
     for (const id of (vs.visibleEntries || [])) {
@@ -862,7 +863,6 @@ function applyViewState(vs) {
     }
 
     state.textBoxes = vs.textBoxes ? vs.textBoxes.map(function(t) { return { id: t.id, text: t.text, x: t.x, y: t.y, width: t.width, height: t.height, align: t.align || 'left' }; }) : [];
-    state.nodeFields = vs.nodeFields || {};
     renderAllTextBoxes();
     renderSidebar();
   } finally {
