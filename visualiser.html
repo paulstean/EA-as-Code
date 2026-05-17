@@ -1182,7 +1182,10 @@ async function saveActiveTabToJSON() {
     searchTerm: vs.searchTerm,
     physics: vs.physics,
     theme: vs.theme,
+    popoverMode: vs.popoverMode,
     positions: vs.positions,
+    textBoxes: vs.textBoxes,
+    nodeFields: vs.nodeFields,
   };
   try {
     var handle = await window.showSaveFilePicker({
@@ -1348,6 +1351,8 @@ function applyJSONViewState(obj) {
     theme: obj.theme || 'dark',
     popoverMode: obj.popoverMode || 'hover',
     positions: obj.positions || {},
+    textBoxes: obj.textBoxes || [],
+    nodeFields: obj.nodeFields || {},
   };
   applyViewState(vs);
 }
