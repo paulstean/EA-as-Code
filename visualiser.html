@@ -1495,10 +1495,13 @@ function initGraph() {
       keyboard: false,
     },
     configure: { enabled: false },
-    backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--graph-bg').trim(),
   };
 
   state.network = new vis.Network(container, { nodes: state.nodes, edges: state.edges }, options);
+  const initCanvas = graphEl.querySelector('canvas');
+  if (initCanvas) {
+    initCanvas.style.background = getComputedStyle(document.documentElement).getPropertyValue('--graph-bg').trim();
+  }
 
   state.network.on('hoverNode', function(params) {
     const connectedEdges = state.network.getConnectedEdges(params.node);
