@@ -378,6 +378,10 @@ header h1{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px
       <button class="fmt-btn" id="fmtSmall" title="Small size">S</button>
       <button class="fmt-btn" id="fmtMedium" title="Medium size">M</button>
       <button class="fmt-btn" id="fmtLarge" title="Large size">L</button>
+      <span class="fmt-sep"></span>
+      <button class="fmt-btn" id="fmtAlignLeft" title="Align left">&#x2190;</button>
+      <button class="fmt-btn" id="fmtAlignCenter" title="Align center">&#x2194;</button>
+      <button class="fmt-btn" id="fmtAlignRight" title="Align right">&#x2192;</button>
     </div>
   </div>
   <aside id="chatPanel">
@@ -688,7 +692,7 @@ function getActiveViewState() {
     theme: document.documentElement.getAttribute('data-theme') || 'dark',
     popoverMode: popoverMode.value,
     positions: positions,
-    textBoxes: state.textBoxes.map(function(tb) { return { id: tb.id, text: tb.text, x: tb.x, y: tb.y, width: tb.width, height: tb.height }; }),
+    textBoxes: state.textBoxes.map(function(tb) { return { id: tb.id, text: tb.text, x: tb.x, y: tb.y, width: tb.width, height: tb.height, align: tb.align }; }),
   };
 }
 
@@ -812,7 +816,7 @@ function applyViewState(vs) {
       popoverMode.value = vs.popoverMode;
     }
 
-    state.textBoxes = vs.textBoxes ? vs.textBoxes.map(function(t) { return { id: t.id, text: t.text, x: t.x, y: t.y, width: t.width, height: t.height }; }) : [];
+    state.textBoxes = vs.textBoxes ? vs.textBoxes.map(function(t) { return { id: t.id, text: t.text, x: t.x, y: t.y, width: t.width, height: t.height, align: t.align || 'left' }; }) : [];
     renderAllTextBoxes();
     renderSidebar();
   } finally {
@@ -1814,7 +1818,7 @@ function createTextBox(screenX, screenY) {
   const id = 'textbox-' + Date.now();
   const graphRect = graphEl.parentElement.getBoundingClientRect();
   const canvasPos = state.network.DOMtoCanvas({ x: screenX - graphRect.left, y: screenY - graphRect.top });
-  const box = { id: id, text: '', x: canvasPos.x, y: canvasPos.y, width: 320, height: 80 };
+  const box = { id: id, text: '', x: canvasPos.x, y: canvasPos.y, width: 320, height: 80, align: 'left' };
   state.textBoxes.push(box);
   renderTextBox(box);
   markTabDirty();
@@ -1899,6 +1903,7 @@ function renderTextBox(box) {
   positionTextBox(el, box);
   var content = el.querySelector('.text-box-content');
   if (content.innerHTML !== box.text) content.innerHTML = box.text || '';
+  content.style.textAlign = box.align || 'left';
   growTextBox(el, box);
 }
 
@@ -1997,6 +2002,7 @@ function showFormatBar(boxId) {
   positionFormatBar(boxId);
   updateBoldState();
   updateFontSizeState();
+  updateAlignState(boxId);
 }
 
 function hideFormatBar() {
@@ -2056,6 +2062,26 @@ function updateFontSizeState() {
   } else {
     medBtn.classList.add('active');
   }
+}
+
+function updateAlignState(boxId) {
+  var box = state.textBoxes.find(function(b) { return b.id === boxId; });
+  if (!box) return;
+  var align = box.align || 'left';
+  document.getElementById('fmtAlignLeft').classList.toggle('active', align === 'left');
+  document.getElementById('fmtAlignCenter').classList.toggle('active', align === 'center');
+  document.getElementById('fmtAlignRight').classList.toggle('active', align === 'right');
+}
+
+function applyAlignment(align) {
+  if (!activeTextBoxId) return;
+  var box = state.textBoxes.find(function(b) { return b.id === activeTextBoxId; });
+  if (!box) return;
+  box.align = align;
+  var content = getActiveContent();
+  if (content) content.style.textAlign = align;
+  updateAlignState(activeTextBoxId);
+  markTabDirty();
 }
 
 function getActiveContent() {
@@ -2758,6 +2784,9 @@ document.getElementById('fmtBold').addEventListener('click', function() {
 document.getElementById('fmtSmall').addEventListener('click', function() { applyFontSize('small'); });
 document.getElementById('fmtMedium').addEventListener('click', function() { applyFontSize('medium'); });
 document.getElementById('fmtLarge').addEventListener('click', function() { applyFontSize('large'); });
+document.getElementById('fmtAlignLeft').addEventListener('click', function() { applyAlignment('left'); });
+document.getElementById('fmtAlignCenter').addEventListener('click', function() { applyAlignment('center'); });
+document.getElementById('fmtAlignRight').addEventListener('click', function() { applyAlignment('right'); });
 
 document.getElementById('textFormatBar').addEventListener('mousedown', function() { cancelHideFormatBar(); });
 
