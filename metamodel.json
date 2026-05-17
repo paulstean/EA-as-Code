@@ -77,6 +77,8 @@
         { "name": "name", "type": "string", "required": true, "description": "Display name of the component" },
         { "name": "technologyStandardId", "type": "string", "required": false, "description": "Technology standard this component uses" },
         { "name": "infrastructureComponentId", "type": "string", "required": false, "description": "Infrastructure component hosting this application" },
+        { "name": "securityStandardIds", "type": "array", "required": false, "description": "Security standards applicable to this component" },
+        { "name": "securityStandardAssessments", "type": "array", "required": false, "description": "Compliance assessments for each applicable security standard" },
         { "name": "description", "type": "string", "required": false, "description": "Description of the component" }
       ]
     },
@@ -222,6 +224,13 @@
       "cardinality": "many-to-one",
       "viaField": "infrastructureComponentId",
       "description": "An Application Component is hosted on an Infrastructure Component"
+    },
+    {
+      "source": "ApplicationComponent",
+      "target": "SecurityStandard",
+      "cardinality": "many-to-many",
+      "viaField": "securityStandardIds",
+      "description": "An Application Component may be assessed against Security Standards"
     },
     {
       "source": "ApplicationComponent",

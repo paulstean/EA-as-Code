@@ -186,6 +186,9 @@ header h1{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px
 #relPopover .pop-field-item{display:flex;align-items:center;gap:4px;font-size:12px;padding:1px 0;cursor:pointer}
 #relPopover .pop-field-item:hover{color:var(--accent)}
 #relPopover .pop-field-item input[type="checkbox"]{accent-color:var(--accent);cursor:pointer;margin:0;flex-shrink:0}
+#relPopover .pop-actions{padding:8px 12px 4px;border-top:1px solid var(--border)}
+#relPopover .pop-remove{display:flex;align-items:center;gap:6px;padding:5px 10px;font-size:12px;color:var(--error);background:transparent;border:1px solid var(--border);border-radius:5px;cursor:pointer;width:100%;transition:all 0.12s}
+#relPopover .pop-remove:hover{background:rgba(231,76,60,0.1);border-color:var(--error)}
 
 /* Text box layer */
 #textBoxLayer{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:10}
@@ -1819,6 +1822,10 @@ function showRelationPopover(nodeId, x, y) {
       html += '</div>';
     }
   }
+
+  // Remove node action
+  html += '<div class="pop-actions"><button class="pop-remove" data-action="remove" data-node-id="' + nodeId + '">&#10005; Remove node from graph</button></div>';
+
   relPopover.innerHTML = html;
   relPopover.style.display = 'block';
 
@@ -1853,6 +1860,16 @@ function showRelationPopover(nodeId, x, y) {
       markTabDirty();
     });
   });
+
+  // Wire remove button
+  var removeBtn = relPopover.querySelector('.pop-remove');
+  if (removeBtn) {
+    removeBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      removeEntryFromGraph(nodeId);
+      relPopover.style.display = 'none';
+    });
+  }
 
   // Wire clicks on items
   relPopover.querySelectorAll('.pop-item').forEach(el => {
