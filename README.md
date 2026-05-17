@@ -1,8 +1,10 @@
 # EA-as-Code
 
-Enterprise Architecture as Code — a git-based repository that stores an organisation's IT landscape as structured JSON catalogs. The `main` branch is the production architecture. Changes are proposed via branches and pull requests, where a GitHub Copilot agent governed by natural-language skill files assesses compliance before merge.
+Enterprise Architecture as Code — a git-based repository that stores an organisation's IT landscape as structured JSON catalogs. The `main` branch is the production architecture. Changes are proposed via branches and pull requests, where AI agents governed by natural-language skill files assess compliance before merge.
 
 Aligned to **TOGAF** conventions. Aimed at **governance and clarity**, not infrastructure-level detail.
+
+**[View release notes](RELEASE_NOTES-v0.1.md)**
 
 ---
 ```
@@ -10,6 +12,7 @@ Aligned to **TOGAF** conventions. Aimed at **governance and clarity**, not infra
 ├── metamodel.json              # Full EA metamodel (11 entity types, relationships, enums)
 ├── specification.md            # Full system specification
 ├── specification-visualiser.md # Visualiser specification
+├── RELEASE_NOTES-v0.1.md        # Release notes
 ├── visualiser.html             # Single-file graph visualiser (open in browser)
 ├── ea-chat-server.py           # Read-only AI chat server for querying the repository
 ├── AGENTS.md                   # Instructions for AI coding agents
@@ -24,6 +27,7 @@ Aligned to **TOGAF** conventions. Aimed at **governance and clarity**, not infra
 │   ├── InfrastructureComponents/
 │   ├── BusinessUserGroups/
 │   ├── Permissions/
+│   ├── SecurityStandards/
 │   └── TechnologyStandards/
 ├── rules/
 │   └── *.md                    # Governance rule files (auto-evaluated by CI)
@@ -51,16 +55,17 @@ Each catalog directory contains:
 | BusinessUnit | Business | 8 | Organisational units (Network Operations, Finance, etc.) |
 | BusinessProcess | Business | 7 | End-to-end processes (Manage Network Assets, Respond to Outages, etc.) |
 | BusinessActivity | Business | 18 | Steps within processes (Create Work Order, Dispatch Crew, etc.) |
-| BusinessUserGroup | Business | 9 | User roles (Field Crew, Network Controller, etc.) |
-| DataDomain | Data | 7 | Data classifications (Asset, Customer, Financial, etc.) |
-| DataEntity | Data | 22 | Logical data entities (Transformer, Account, Meter Read, etc.) |
-| ApplicationComponent | Application | 9 | Systems (SAP AM, ADMS, D365 CRM, Azure Data Lake, etc.) |
-| InformationFlow | Application | 12 | Data flows between systems |
+| BusinessUserGroup | Business | 10 | User roles (Field Crew, Network Controller, External AI Consultancy, etc.) |
+| DataDomain | Data | 9 | Data classifications (Asset, Customer, Financial, Incident, Weather, etc.) |
+| DataEntity | Data | 26 | Logical data entities (Transformer, Account, Meter Read, Incident Report, etc.) |
+| ApplicationComponent | Application | 10 | Systems (SAP AM, ADMS, D365 CRM, Azure Data Lake, Databricks, etc.) |
+| InformationFlow | Application | 15 | Data flows between systems |
 | InfrastructureComponent | Technology | 8 | Physical/virtual infrastructure (AKS cluster, SAP HANA DB, etc.) |
-| Permission | Technology | 15 | Access rights (group-to-system mappings) |
+| Permission | Technology | 16 | Access rights (group-to-system mappings) |
+| SecurityStandard | Technology | 25 | ISO 27001:2022 information security controls |
 | TechnologyStandard | Technology | 10 | Approved/trial/sunset/forbidden technologies |
 
-The seed data models a mid-size **Electrical Distribution Utility** using Azure, SAP S/4HANA (Asset Management, Finance, HR), ADMS, Dynamics 365 CRM, and Dynamics 365 WMS. All cross-references are valid — zero orphaned IDs.
+The seed data models a mid-size **Electrical Distribution Utility** using Azure, SAP S/4HANA (Asset Management, Finance, HR), ADMS, Dynamics 365 CRM, Dynamics 365 WMS, Azure Databricks, and 25 ISO 27001 security controls. All cross-references are valid — zero orphaned IDs.
 
 ---
 
@@ -123,8 +128,8 @@ A single-file HTML application that loads catalogs from the repo and renders the
 
 | Feature | Description |
 |---|---|
-| **Force-directed graph** | Nodes spring apart, connected ones cluster. Powered by vis-network |
-| **Catalog selection** | Multi-select checkboxes. Add/remove entire catalogs with instant graph update |
+| **Force-directed graph** | Nodes spring apart, connected ones cluster. Powered by vis-network with physics sliders |
+| **Catalog selection** | Multi-select checkboxes with collapsible sidebar. Add/remove entire catalogs with instant graph update |
 | **Select All / Deselect All** | One-click toggle for all catalogs |
 | **Search / filter** | Type to dim non-matching nodes by name or description |
 | **Node detail panel** | Click a node to see all its fields with resolved reference links |
@@ -132,7 +137,16 @@ A single-file HTML application that loads catalogs from the repo and renders the
 | **Hover highlight** | Hover a node to highlight connected nodes and dim the rest |
 | **Dark / light theme** | Toggle in the header. Preference saved to localStorage |
 | **Start empty** | Canvas is blank until you select catalogs — build the view incrementally |
+| **Zoom controls** | +/- buttons with live zoom percentage display, plus zoom-to-fit button |
+| **Multi-tab views** | Open multiple independent graph views with per-tab persistence |
+| **Save/load state** | Export/import tab state to JSON files. Session restore via localStorage |
+| **Text box annotations** | Right-click to add resizable, formatable text boxes on the canvas |
+| **Node field selection** | Checkboxes in node popover to choose which fields appear on each node |
+| **Node resize** | Drag bottom-right corner to resize individual nodes, persisted across refresh |
+| **Remove node** | Remove a node from the graph via the node popover |
+| **Compliance assessments** | View security standard compliance status (Compliant/NonCompliant/PartiallyCompliant) with rationale |
 | **AI Chat** | Right-hand panel connects to a local Ollama LLM for asking questions about the repository |
+| **Resizable chat pane** | Drag the left edge of the chat panel to resize |
 
 ---
 
