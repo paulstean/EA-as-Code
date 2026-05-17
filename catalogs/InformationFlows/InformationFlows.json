@@ -118,5 +118,13 @@
     "targetApplicationComponentId": "app-010",
     "dataEntityIds": ["de-025", "de-026"],
     "description": "External weather data ingested through Azure Integration Bus flows to Azure Databricks for weather-impact analysis."
+  },
+  {
+    "id": "flow-016",
+    "name": "AMI Meter Historian",
+    "sourceApplicationComponentId": "app-011",
+    "targetApplicationComponentId": "app-007",
+    "dataEntityIds": ["de-018"],
+    "description": "AMI Meter Historian flows LV meter interval data from Minus FT to Azure Data Lake via Azure Integration Services. Carries 15-minute AMI reads and 5-minute power quality measurements (active/reactive power, current per phase)."
   }
 ]
