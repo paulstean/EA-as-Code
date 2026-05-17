@@ -390,7 +390,7 @@ header h1{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px
       <button class="chat-toggle" id="chatToggle" title="Toggle chat panel">&times;</button>
     </div>
     <div class="chat-messages" id="chatMessages">
-      <div class="chat-welcome">Ask about the EA repository...</div>
+      <div class="chat-welcome">Ask about the EA repository... try prompts such as "Please add all the data entities in the customer domain" or "What integrations exist between the customer domain and the network operations domain?"</div>
     </div>
     <div class="chat-input-area">
       <textarea id="chatInput" rows="1" placeholder="Ask a question..." title="Enter to send, Shift+Enter for newline"></textarea>
@@ -598,8 +598,11 @@ function applyTheme(theme) {
   if (state.network) {
     state.network.setOptions({
       nodes: { font: { color: '#ffffff' } },
-      backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--graph-bg').trim(),
     });
+    const canvas = graphEl.querySelector('canvas');
+    if (canvas) {
+      canvas.style.background = getComputedStyle(document.documentElement).getPropertyValue('--graph-bg').trim();
+    }
   }
 }
 
@@ -789,8 +792,8 @@ function applyViewState(vs) {
             centralGravity: parseFloat(gravitySlider.value),
             damping: parseFloat(dampingSlider.value),
             springConstant: parseFloat(springConstSlider.value),
-            maxVelocity: parseInt(maxVelSlider.value),
-          }
+          },
+          maxVelocity: parseInt(maxVelSlider.value),
         },
         edges: { smooth: { type: 'curvedCW', roundness: parseFloat(curvatureSlider.value) } }
       });
@@ -1462,12 +1465,10 @@ function initGraph() {
   const options = {
     groups,
     nodes: {
-      zIndex: 1,
       font: { color: '#ffffff', size: 13 },
       margin: { top: 8, right: 14, bottom: 8, left: 14 },
     },
     edges: {
-      zIndex: 0,
       arrows: { to: { enabled: true, scaleFactor: 0.8 } },
       width: 1.5,
       smooth: { type: 'curvedCW', roundness: curvature },
@@ -1494,6 +1495,7 @@ function initGraph() {
       keyboard: false,
     },
     configure: { enabled: false },
+    backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--graph-bg').trim(),
   };
 
   state.network = new vis.Network(container, { nodes: state.nodes, edges: state.edges }, options);
@@ -2422,7 +2424,7 @@ function renderSidebar() {
     catHtml += `<span class="cat-toggle ${isExpanded ? 'open' : ''}">&#x25B6;</span>`;
     catHtml += `<input type="checkbox" class="cat-master" ${selected === total && total > 0 ? 'checked' : ''}>`;
     catHtml += `<span class="cat-swatch" style="background:${color}"></span>`;
-    catHtml += `<span class="cat-name">${cat}</span>`;
+    catHtml += `<span class="cat-name">${toTitle(cat)}</span>`;
     catHtml += `<span class="cat-count">${selected}/${total}</span>`;
     catHtml += `</div>`;
     catHtml += `<div class="cat-entries ${isExpanded ? 'open' : ''}">`;
@@ -2504,7 +2506,7 @@ function renderSidebar() {
   for (const cat of state.loadedCatalogNames) {
     const color = CATALOG_COLORS[cat] || '#888';
     const count = state.entries[cat]?.length || 0;
-    lgdHtml += `<div class="lgd-item"><span class="lgd-swatch" style="background:${color}"></span><span class="lgd-name">${cat}</span><span class="lgd-count">${count}</span></div>`;
+    lgdHtml += `<div class="lgd-item"><span class="lgd-swatch" style="background:${color}"></span><span class="lgd-name">${toTitle(cat)}</span><span class="lgd-count">${count}</span></div>`;
   }
   legend.innerHTML = lgdHtml || '<div class="empty-catalogs">No catalogs loaded</div>';
 }
@@ -2786,7 +2788,7 @@ tryRestoreSession();
 
 // ─── AI Chat ────────────────────────────────────────────────
 const CHAT_SERVER = 'http://localhost:8765';
-let chatModel = 'qwen3.5:latest';
+let chatModel = 'gemma4:e4b';
 const chatMessages = [];
 let isStreaming = false;
 let pendingFollowUpText = null;
@@ -2818,9 +2820,9 @@ async function checkChatServer() {
           opt.textContent = m;
           modelSelect.appendChild(opt);
         }
-        if ([...modelSelect.options].some(o => o.value === 'qwen3.5:latest')) {
-          modelSelect.value = 'qwen3.5:latest';
-          chatModel = 'qwen3.5:latest';
+        if ([...modelSelect.options].some(o => o.value === 'gemma4:e4b')) {
+          modelSelect.value = 'gemma4:e4b';
+          chatModel = 'gemma4:e4b';
         } else if (chatModel && [...modelSelect.options].some(o => o.value === chatModel)) {
           modelSelect.value = chatModel;
         }
