@@ -519,7 +519,7 @@ const state = {
   tabs: [],
   activeTabId: null,
   tabLoadGuard: false,
-  catalogFields: {},  // catalogName -> [fieldName, ...], defaults to ['name']
+  nodeFields: {},  // entryId -> [fieldName, ...], defaults to ['name']
   textBoxes: [],
   pendingCmd: null,  // stores {action, catalog, targets} from cmd_request event
 };
@@ -654,7 +654,7 @@ function escapeHtml(s) {
 
 function buildNodeLabel(data) {
   var cat = data.catalog, entry = data.entry;
-  var fields = state.catalogFields[cat];
+  var fields = state.nodeFields[data.entry.id];
   if (!fields || fields.length === 0) fields = ['name'];
   var label = '<b>' + toTitle(cat) + '</b>\n<b>' + escapeHtml(entry.name) + '</b>';
   for (var i = 0; i < fields.length; i++) {
@@ -675,14 +675,10 @@ function getCatalogEntryFields(catalog) {
   return keys.filter(function(k) { return k !== 'name'; });
 }
 
-function refreshNodeLabels(catalog) {
-  var nodes = state.nodes.get();
-  for (var i = 0; i < nodes.length; i++) {
-    var n = nodes[i];
-    var data = state.entryMap[n.id];
-    if (!data || data.catalog !== catalog) continue;
-    state.nodes.update({ id: n.id, label: buildNodeLabel(data) });
-  }
+function refreshNodeLabel(nodeId) {
+  var data = state.entryMap[nodeId];
+  if (!data) return;
+  state.nodes.update({ id: nodeId, label: buildNodeLabel(data) });
 }
 
 // ─── Tab Management ──────────────────────────────────────────
@@ -739,7 +735,7 @@ function getActiveViewState() {
     theme: document.documentElement.getAttribute('data-theme') || 'dark',
     popoverMode: popoverMode.value,
     positions: positions,
-    catalogFields: JSON.parse(JSON.stringify(state.catalogFields)),
+    nodeFields: JSON.parse(JSON.stringify(state.nodeFields)),
     textBoxes: state.textBoxes.map(function(tb) { return { id: tb.id, text: tb.text, x: tb.x, y: tb.y, width: tb.width, height: tb.height, align: tb.align }; }),
   };
 }
@@ -770,7 +766,7 @@ function getEmptyViewState() {
     theme: document.documentElement.getAttribute('data-theme') || 'dark',
     popoverMode: 'hover',
     positions: {},
-    catalogFields: {},
+    nodeFields: {},
     textBoxes: [],
   };
 }
@@ -866,7 +862,7 @@ function applyViewState(vs) {
     }
 
     state.textBoxes = vs.textBoxes ? vs.textBoxes.map(function(t) { return { id: t.id, text: t.text, x: t.x, y: t.y, width: t.width, height: t.height, align: t.align || 'left' }; }) : [];
-    state.catalogFields = vs.catalogFields || {};
+    state.nodeFields = vs.nodeFields || {};
     renderAllTextBoxes();
     renderSidebar();
   } finally {
@@ -1773,15 +1769,15 @@ function showRelationPopover(nodeId, x, y) {
   // Field selection section
   if (catalog) {
     var catFields = getCatalogEntryFields(catalog);
-    var selected = state.catalogFields[catalog];
+    var selected = state.nodeFields[nodeId];
     if (!selected || selected.length === 0) selected = ['name'];
     html += '<div class="pop-fields">';
     html += '<div class="pop-fields-label">Node fields</div>';
-    html += '<label class="pop-field-item"><input type="checkbox" data-catalog="' + catalog + '" data-field="name" checked disabled> <span style="color:var(--text-muted)">Name</span></label>';
+    html += '<label class="pop-field-item"><input type="checkbox" data-node-id="' + nodeId + '" data-field="name" checked disabled> <span style="color:var(--text-muted)">Name</span></label>';
     for (var fi = 0; fi < catFields.length; fi++) {
       var fn = catFields[fi];
       var checked = selected.indexOf(fn) !== -1 ? ' checked' : '';
-      html += '<label class="pop-field-item"><input type="checkbox" data-catalog="' + catalog + '" data-field="' + fn + '"' + checked + '> ' + formatFieldName(fn) + '</label>';
+      html += '<label class="pop-field-item"><input type="checkbox" data-node-id="' + nodeId + '" data-field="' + fn + '"' + checked + '> ' + formatFieldName(fn) + '</label>';
     }
     html += '</div>';
   }
@@ -1821,10 +1817,9 @@ function showRelationPopover(nodeId, x, y) {
   relPopover.querySelectorAll('.pop-field-item input[type="checkbox"]').forEach(function(cb) {
     cb.addEventListener('change', function(e) {
       e.stopPropagation();
-      var catalog = this.dataset.catalog;
       var field = this.dataset.field;
-      if (!catalog || !field) return;
-      var selected = state.catalogFields[catalog];
+      if (!field) return;
+      var selected = state.nodeFields[nodeId];
       if (!selected) selected = ['name'];
       if (this.checked) {
         if (selected.indexOf(field) === -1) selected.push(field);
@@ -1832,8 +1827,8 @@ function showRelationPopover(nodeId, x, y) {
         selected = selected.filter(function(f) { return f !== field; });
         if (selected.length === 0) selected = ['name'];
       }
-      state.catalogFields[catalog] = selected;
-      refreshNodeLabels(catalog);
+      state.nodeFields[nodeId] = selected;
+      refreshNodeLabel(nodeId);
       markTabDirty();
     });
   });
