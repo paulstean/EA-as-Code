@@ -718,6 +718,16 @@ function markTabSaved() {
 
 function getActiveViewState() {
   const positions = state.network ? state.network.getPositions() : {};
+  const nodes = state.nodes ? state.nodes.get() : [];
+  const nodeConstraints = {};
+  for (var i = 0; i < nodes.length; i++) {
+    var n = nodes[i];
+    if (n.widthConstraint !== undefined || n.heightConstraint !== undefined) {
+      nodeConstraints[n.id] = {};
+      if (n.widthConstraint !== undefined) nodeConstraints[n.id].widthConstraint = n.widthConstraint;
+      if (n.heightConstraint !== undefined) nodeConstraints[n.id].heightConstraint = n.heightConstraint;
+    }
+  }
   return {
     visibleEntries: [...state.visibleEntries],
     expandedCatalogs: [...state.expandedCatalogs],
@@ -735,6 +745,7 @@ function getActiveViewState() {
     theme: document.documentElement.getAttribute('data-theme') || 'dark',
     popoverMode: popoverMode.value,
     positions: positions,
+    nodeConstraints: nodeConstraints,
     nodeFields: JSON.parse(JSON.stringify(state.nodeFields)),
     textBoxes: state.textBoxes.map(function(tb) { return { id: tb.id, text: tb.text, x: tb.x, y: tb.y, width: tb.width, height: tb.height, align: tb.align }; }),
   };
@@ -766,6 +777,7 @@ function getEmptyViewState() {
     theme: document.documentElement.getAttribute('data-theme') || 'dark',
     popoverMode: 'hover',
     positions: {},
+    nodeConstraints: {},
     nodeFields: {},
     textBoxes: [],
   };
@@ -795,6 +807,8 @@ function applyViewState(vs) {
         group: data.catalog,
         x: pos?.x,
         y: pos?.y,
+        widthConstraint: vs.nodeConstraints?.[id]?.widthConstraint,
+        heightConstraint: vs.nodeConstraints?.[id]?.heightConstraint,
       });
       state.visibleEntries.add(id);
     }
@@ -1186,6 +1200,7 @@ async function saveActiveTabToJSON() {
     positions: vs.positions,
     textBoxes: vs.textBoxes,
     nodeFields: vs.nodeFields,
+    nodeConstraints: vs.nodeConstraints,
   };
   try {
     var handle = await window.showSaveFilePicker({
@@ -1353,8 +1368,8 @@ function applyJSONViewState(obj) {
     positions: obj.positions || {},
     textBoxes: obj.textBoxes || [],
     nodeFields: obj.nodeFields || {},
-  };
-  applyViewState(vs);
+    nodeConstraints: obj.nodeConstraints || {},
+  };  applyViewState(vs);
 }
 
 // ─── Directory loading (File System Access API) ───────────────
