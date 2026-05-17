@@ -4,6 +4,12 @@
     "name": "SAP Asset Management",
     "technologyStandardId": "ts-002",
     "infrastructureComponentId": "infra-003",
+    "securityStandardIds": ["ss-005", "ss-023", "ss-011"],
+    "securityStandardAssessments": [
+      { "standardId": "ss-005", "status": "Compliant", "notes": "Asset master data is fully inventoried within the SAP Asset Management module. Asset lifecycle, ownership, and classification records are maintained in line with the Information Security Asset Management policy." },
+      { "standardId": "ss-023", "status": "Compliant", "notes": "All changes to SAP configuration, transports, and master data follow the established change management workflow with documented approval, testing in the QA sandbox, and rollback procedures." },
+      { "standardId": "ss-011", "status": "Compliant", "notes": "Role-based access controls are enforced via SAP Security roles and authorisation objects. Segregation of duties is maintained through SAP GRC Access Control with quarterly recertification." }
+    ],
     "description": "SAP S/4HANA module for managing asset master data, work orders, and maintenance plans."
   },
   {
@@ -11,6 +17,13 @@
     "name": "SAP Finance",
     "technologyStandardId": "ts-002",
     "infrastructureComponentId": "infra-003",
+    "securityStandardIds": ["ss-009", "ss-003", "ss-013", "ss-014"],
+    "securityStandardAssessments": [
+      { "standardId": "ss-009", "status": "Compliant", "notes": "SAP Finance complies with SOX and local statutory reporting requirements. Audit trails are maintained through SAP FI document flow, and regulatory reporting outputs are validated quarterly by internal audit." },
+      { "standardId": "ss-003", "status": "Compliant", "notes": "Segregation of duties is enforced via SAP GRC with critical combination rules for financial transactions. Conflicting authorisations are identified during access certification and remediated within defined SLAs." },
+      { "standardId": "ss-013", "status": "Compliant", "notes": "All financial data at rest within the SAP HANA database is encrypted using SAP HANA native encryption with AES-256. Backup tapes and snapshots are also encrypted." },
+      { "standardId": "ss-014", "status": "Compliant", "notes": "All SAP GUI and RFC communications use TLS 1.2 encryption. Web services interfacing with external financial systems use mutual TLS with certificate validation." }
+    ],
     "description": "SAP S/4HANA module for financial accounting, controlling, accounts payable, and receivable."
   },
   {
@@ -18,6 +31,13 @@
     "name": "SAP Human Resources",
     "technologyStandardId": "ts-002",
     "infrastructureComponentId": "infra-003",
+    "securityStandardIds": ["ss-009", "ss-011", "ss-013", "ss-010"],
+    "securityStandardAssessments": [
+      { "standardId": "ss-009", "status": "Compliant", "notes": "GDPR requirements for employee personal data are addressed through SAP HCM data privacy features including purpose-based data processing, retention management, and the ability to fulfil data subject access requests." },
+      { "standardId": "ss-011", "status": "Compliant", "notes": "Access to HR data is restricted by sensitive HR authorisation objects. Only HR business partners and payroll administrators have access to their respective organisational assignments." },
+      { "standardId": "ss-013", "status": "NonCompliant", "notes": "A legacy HR module extension stores employee medical data in an unencrypted flat-file directory on the application server. Migration to the SAP HANA native encryption layer is planned for Q3." },
+      { "standardId": "ss-010", "status": "Compliant", "notes": "All HR personnel handling employee data complete annual GDPR and data privacy training. Role-specific modules cover handling of special category data in the HR context." }
+    ],
     "description": "SAP S/4HANA module for HR administration, payroll, and organisational management."
   },
   {
@@ -25,6 +45,13 @@
     "name": "ADMS",
     "technologyStandardId": "ts-004",
     "infrastructureComponentId": "infra-001",
+    "securityStandardIds": ["ss-017", "ss-023", "ss-012", "ss-018"],
+    "securityStandardAssessments": [
+      { "standardId": "ss-017", "status": "PartiallyCompliant", "notes": "The ADMS OT network is segmented from the corporate IT network via a unidirectional data diode, but there is no micro-segmentation within the OT zone itself. All OT devices share a common network segment." },
+      { "standardId": "ss-023", "status": "Compliant", "notes": "All changes to ADMS configuration, network parameters, and control logic follow a rigorous change management process with dual-authorisation approval and mandatory rollback testing in the simulation environment." },
+      { "standardId": "ss-012", "status": "NonCompliant", "notes": "The ADMS platform was deployed prior to the MFA mandate and uses single-factor authentication for all operator and administrator accounts. MFA cannot be retrofitted without a major version upgrade that is not yet scheduled." },
+      { "standardId": "ss-018", "status": "PartiallyCompliant", "notes": "Standard application logging is provided, but has not been integrated to the Security Operations Centre SIEM. Logs are stored locally on the ADMS servers with 30-day retention and no real-time alerting capability." }
+    ],
     "description": "Advanced Distribution Management System for real-time network monitoring, control, and outage management."
   },
   {
@@ -32,6 +59,13 @@
     "name": "Dynamics 365 CRM",
     "technologyStandardId": "ts-003",
     "infrastructureComponentId": "infra-002",
+    "securityStandardIds": ["ss-013", "ss-014", "ss-025", "ss-011"],
+    "securityStandardAssessments": [
+      { "standardId": "ss-013", "status": "Compliant", "notes": "Microsoft Dynamics 365 uses Azure SQL TDE with AES-256 for all customer and account data at rest. File attachments in the CRM are encrypted using Azure Blob Storage server-side encryption." },
+      { "standardId": "ss-014", "status": "Compliant", "notes": "All Dynamics 365 traffic uses TLS 1.2 enforced at the Azure platform level. Third-party API integrations using webhooks are configured to use HTTPS with certificate pinning." },
+      { "standardId": "ss-025", "status": "Compliant", "notes": "Dynamics 365 is integrated with Azure AD for centralised identity management, SSO, and automated provisioning. Access certifications are performed quarterly for all CRM users." },
+      { "standardId": "ss-011", "status": "Compliant", "notes": "Role-based security is configured at the entity and field level within Dynamics 365. Business unit-level access controls ensure data isolation between business functions." }
+    ],
     "description": "Microsoft Dynamics 365 Customer Relationship Management system for accounts, billing, and service."
   },
   {
@@ -39,6 +73,12 @@
     "name": "Dynamics 365 WMS",
     "technologyStandardId": "ts-003",
     "infrastructureComponentId": "infra-002",
+    "securityStandardIds": ["ss-011", "ss-012", "ss-018"],
+    "securityStandardAssessments": [
+      { "standardId": "ss-011", "status": "Compliant", "notes": "Access to WMS functions is controlled through Dynamics 365 security roles mapped to warehouse job functions. Warehouse supervisors, pickers, and inventory clerks have role-appropriate privilege sets." },
+      { "standardId": "ss-012", "status": "NonCompliant", "notes": "The Dynamics 365 WMS module does not enforce MFA for warehouse terminal logins. The handheld scanner devices used by floor staff run a legacy WMS client that lacks MFA support." },
+      { "standardId": "ss-018", "status": "Compliant", "notes": "WMS transaction logs are forwarded to the central SIEM platform via Azure Monitor. Inventory adjustments, cycle counts, and goods receipt events are all auditable with 12-month retention." }
+    ],
     "description": "Microsoft Dynamics 365 Warehouse Management System for inventory and logistics."
   },
   {
@@ -46,6 +86,13 @@
     "name": "Azure Data Lake",
     "technologyStandardId": "ts-001",
     "infrastructureComponentId": "infra-004",
+    "securityStandardIds": ["ss-013", "ss-014", "ss-011", "ss-018"],
+    "securityStandardAssessments": [
+      { "standardId": "ss-013", "status": "Compliant", "notes": "Azure Data Lake Storage Gen2 is configured with Azure Storage Service Encryption using Microsoft-managed keys at the default account level. Customer-managed key options are available for regulated data lake zones." },
+      { "standardId": "ss-014", "status": "Compliant", "notes": "All data ingestion pipelines and client connections to Azure Data Lake use HTTPS with TLS 1.2. Data egress to on-premises systems is protected via Azure ExpressRoute with encrypted tunnels." },
+      { "standardId": "ss-011", "status": "PartiallyCompliant", "notes": "Azure RBAC is used for coarse-grained access control at the storage account and container level, but fine-grained ACLs on specific directory paths are inconsistently applied across data lake zones due to manual configuration." },
+      { "standardId": "ss-018", "status": "Compliant", "notes": "Azure Data Lake diagnostic settings stream all read, write, and delete operations to Log Analytics and the central SIEM platform with real-time alerting for anomalous access patterns." }
+    ],
     "description": "Azure Data Lake Gen2 storage for analytics, reporting, and data science workloads."
   },
   {
@@ -53,6 +100,13 @@
     "name": "Azure Integration Bus",
     "technologyStandardId": "ts-001",
     "infrastructureComponentId": "infra-005",
+    "securityStandardIds": ["ss-014", "ss-017", "ss-018", "ss-012"],
+    "securityStandardAssessments": [
+      { "standardId": "ss-014", "status": "Compliant", "notes": "All messages flowing through Azure API Management and Service Bus are encrypted in transit using TLS 1.2. Integration endpoints enforce minimum TLS version and reject connections using deprecated protocols." },
+      { "standardId": "ss-017", "status": "Compliant", "notes": "The integration bus is deployed in a dedicated Azure virtual network with network security groups and Azure Firewall policies controlling ingress and egress traffic between integration tiers." },
+      { "standardId": "ss-018", "status": "Compliant", "notes": "Integration bus operations including message throughput, failed deliveries, and policy violations are logged to Azure Monitor and the central SIEM with dashboard alerts for the integration team." },
+      { "standardId": "ss-012", "status": "PartiallyCompliant", "notes": "MFA is enforced for all human administrator access to the Azure Integration Bus management portal, but service principal and managed identity authentication used by automated integration pipelines does not support MFA." }
+    ],
     "description": "Azure API Management and Service Bus for application integration and message brokering."
   },
   {
@@ -60,12 +114,27 @@
     "name": "Corporate Portal",
     "technologyStandardId": "ts-001",
     "infrastructureComponentId": "infra-005",
+    "securityStandardIds": ["ss-010", "ss-025", "ss-011", "ss-012", "ss-018"],
+    "securityStandardAssessments": [
+      { "standardId": "ss-010", "status": "Compliant", "notes": "The Corporate Portal hosts the mandatory annual security awareness training modules and phishing simulation campaigns, and tracks employee completion rates for reporting to the risk committee." },
+      { "standardId": "ss-025", "status": "Compliant", "notes": "The portal is integrated with Azure AD for SSO using SAML 2.0. User provisioning and de-provisioning is automated from the HR system via SCIM." },
+      { "standardId": "ss-011", "status": "Compliant", "notes": "Access to portal administrative functions and content management is controlled via Azure AD group membership with role-based permissions for content authors, editors, and administrators." },
+      { "standardId": "ss-012", "status": "Compliant", "notes": "MFA using the Microsoft Authenticator app is enforced for all Corporate Portal users, including contractors and external partners, for both initial authentication and sensitive content publishing operations." },
+      { "standardId": "ss-018", "status": "PartiallyCompliant", "notes": "User authentication events are logged to Azure AD sign-in logs, but portal-specific activity such as document downloads and page edits is not captured in a structured audit log or forwarded to the SIEM." }
+    ],
     "description": "Internal employee portal for self-service HR, procurement requests, and company news."
   },
   {
     "id": "app-010",
     "name": "Azure Databricks",
     "technologyStandardId": "ts-001",
+    "securityStandardIds": ["ss-013", "ss-014", "ss-011", "ss-016"],
+    "securityStandardAssessments": [
+      { "standardId": "ss-013", "status": "Compliant", "notes": "Azure Databricks workspaces are configured with managed disk encryption at rest using Azure Storage Service Encryption. DBFS root and mounted storage volumes are encrypted with customer-managed keys." },
+      { "standardId": "ss-014", "status": "Compliant", "notes": "All Databricks cluster communications, notebook access, and API calls use TLS 1.2. Spark shuffle and web UI traffic within the cluster is also encrypted." },
+      { "standardId": "ss-011", "status": "PartiallyCompliant", "notes": "Azure RBAC and Databricks workspace-level ACLs are configured for data access governance, but fine-grained table and row-level access controls have not been implemented across all workspaces, leading to overly permissive data access for junior analysts." },
+      { "standardId": "ss-016", "status": "NonCompliant", "notes": "There are no security gates in the CI/CD pipeline for Databricks notebooks and jobs. Code reviews do not include security review, and there is no static analysis or dependency scanning for Python and R libraries used in production jobs." }
+    ],
     "description": "Azure Databricks analytics platform for data engineering, data science, and machine learning workloads supporting the ERT project."
   }
 ]
