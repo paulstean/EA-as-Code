@@ -133,6 +133,19 @@
       ]
     },
     {
+      "name": "SecurityStandard",
+      "catalog": "SecurityStandards",
+      "togafDomain": "Technology",
+      "description": "An information security control or requirement derived from ISO 27001",
+      "fields": [
+        { "name": "id", "type": "string", "required": true, "description": "Unique identifier (ss-* prefix)" },
+        { "name": "name", "type": "string", "required": true, "description": "ISO 27001 control name" },
+        { "name": "category", "type": "string", "required": true, "description": "ISO 27001 theme: Organizational, People, Physical, Technological" },
+        { "name": "status", "type": "string", "required": true, "description": "Implementation status: Implemented, Planned, NotApplicable, or Exempted" },
+        { "name": "description", "type": "string", "required": false, "description": "Description of the security requirement" }
+      ]
+    },
+    {
       "name": "TechnologyStandard",
       "catalog": "TechnologyStandards",
       "togafDomain": "Technology",
@@ -279,6 +292,10 @@
     "PermissionAccessLevel": {
       "values": ["Read", "Write", "Admin", "FullControl"],
       "description": "Access level granted by a permission"
+    },
+    "SecurityStandardStatus": {
+      "values": ["Implemented", "Planned", "NotApplicable", "Exempted"],
+      "description": "Implementation status of a security control"
     }
   }
 }
