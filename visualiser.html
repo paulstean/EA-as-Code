@@ -153,6 +153,10 @@ header h1{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px
 #emptyState{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:var(--text-muted);font-size:15px;text-align:center;pointer-events:none;display:none}
 #zoomFitBtn{position:absolute;bottom:16px;right:16px;z-index:20;width:36px;height:36px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:16px;color:var(--text-secondary);display:flex;align-items:center;justify-content:center;transition:all 0.12s;box-shadow:0 2px 8px var(--shadow)}
 #zoomFitBtn:hover{background:var(--hover-highlight);color:var(--text-primary);border-color:var(--accent)}
+#zoomControls{position:absolute;bottom:16px;right:60px;z-index:20;display:flex;align-items:center;gap:4px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:4px 8px;box-shadow:0 2px 8px var(--shadow)}
+#zoomControls .zoom-label{font-size:12px;color:var(--text-secondary);min-width:44px;text-align:center;user-select:none}
+#zoomControls button{width:28px;height:28px;background:transparent;border:1px solid var(--border);border-radius:5px;cursor:pointer;font-size:16px;color:var(--text-secondary);display:flex;align-items:center;justify-content:center;transition:all 0.12s;padding:0;line-height:1}
+#zoomControls button:hover{background:var(--hover-highlight);color:var(--text-primary);border-color:var(--accent)}
 
 /* Detail panel */
 #detailPanel{display:none;background:var(--panel-bg);border-top:1px solid var(--border);max-height:280px;overflow-y:auto;flex-shrink:0;transition:max-height 0.2s}
@@ -389,7 +393,7 @@ header h1{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px
     <div id="graph"></div>
     <div id="emptyState">Open a repository and select catalogs to begin</div>
     <div id="textBoxLayer"></div>
-    <button id="zoomFitBtn" title="Zoom to fit">&#8982;</button>
+    <div id="zoomControls"><button id="zoomOutBtn" title="Zoom out">&minus;</button><span class="zoom-label" id="zoomLabel">100%</span><button id="zoomInBtn" title="Zoom in">+</button></div><button id="zoomFitBtn" title="Zoom to fit">&#8982;</button>
     <div id="nodeResizeHandle"></div>
     <div id="textFormatBar" style="display:none">
       <button class="fmt-btn" id="fmtBold" title="Bold"><b>B</b></button>
@@ -1512,6 +1516,22 @@ function initGraph() {
     if (state.network && state.nodes.get().length > 0) state.network.fit({ animation: true });
   };
 
+  function doZoom(factor) {
+    if (!state.network) return;
+    var s = state.network.getScale() * factor;
+    s = Math.max(0.05, Math.min(s, 5));
+    state.network.moveTo({ scale: s });
+  }
+
+  document.getElementById('zoomInBtn').onclick = function() { doZoom(1.4); };
+  document.getElementById('zoomOutBtn').onclick = function() { doZoom(1 / 1.4); };
+
+  function updateZoomLabel() {
+    if (!state.network) return;
+    var pct = Math.round(state.network.getScale() * 100);
+    document.getElementById('zoomLabel').textContent = pct + '%';
+  }
+
   state.nodes = new vis.DataSet([]);
   state.edges = new vis.DataSet([]);
   state.visibleEntries = new Set();
@@ -1658,6 +1678,7 @@ function initGraph() {
 
   state.network.on('afterDrawing', function() {
     updateTextBoxPositions();
+    updateZoomLabel();
     if (nodeResizeHandleNodeId && !nodeResizeState) {
       positionNodeResizeHandle(nodeResizeHandleNodeId);
     }
