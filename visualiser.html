@@ -200,6 +200,9 @@ header h1{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px
 .text-box .resize-handle{position:absolute;bottom:0;right:0;width:14px;height:14px;cursor:nwse-resize;pointer-events:auto}
 .text-box .resize-handle::after{content:'';position:absolute;bottom:2px;right:2px;width:8px;height:8px;border-right:2px solid #666;border-bottom:2px solid #666}
 
+#nodeResizeHandle{display:none;position:absolute;z-index:15;width:16px;height:16px;cursor:nwse-resize;pointer-events:auto}
+#nodeResizeHandle::after{content:'';position:absolute;bottom:3px;right:3px;width:10px;height:10px;border-right:2px solid #fff;border-bottom:2px solid #fff;opacity:0.8}
+
 /* Text format bar */
 #textFormatBar{display:none;position:fixed;z-index:20;background:#fff;border:1px solid #ccc;border-radius:6px;padding:4px 8px;gap:2px;box-shadow:0 2px 10px rgba(0,0,0,0.3);pointer-events:auto;font-family:'Segoe UI',sans-serif;align-items:center}
 #textFormatBar .fmt-btn{background:none;border:1px solid transparent;border-radius:4px;padding:2px 8px;cursor:pointer;font-size:12px;color:#333;line-height:1.4;min-width:24px;text-align:center}
@@ -377,6 +380,7 @@ header h1{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px
     <div id="graph"></div>
     <div id="emptyState">Open a repository and select catalogs to begin</div>
     <div id="textBoxLayer"></div>
+    <div id="nodeResizeHandle"></div>
     <div id="textFormatBar" style="display:none">
       <button class="fmt-btn" id="fmtBold" title="Bold"><b>B</b></button>
       <span class="fmt-sep"></span>
@@ -1483,6 +1487,8 @@ function initGraph() {
   state.selectedNodeId = null;
   state.textBoxes = [];
   textBoxLayer.innerHTML = '';
+  nodeResizeHandle.style.display = 'none';
+  nodeResizeHandleNodeId = null;
   detailPanel.classList.remove('open');
   detailPanel.style.display = 'none';
 
@@ -1582,11 +1588,13 @@ function initGraph() {
       const my = evt ? evt.clientY : (params.pointer.DOM.y + graphEl.getBoundingClientRect().top);
       showRelationPopover(params.node, mx, my);
     }
+    showNodeResizeHandle(params.node);
   });
 
   state.network.on('blurNode', function() {
     updateNodeColors();
     if (popoverMode.value === 'hover') hideRelationPopoverDelayed();
+    hideNodeResizeHandle();
   });
 
   state.network.on('dragEnd', function() {
@@ -1617,6 +1625,9 @@ function initGraph() {
 
   state.network.on('afterDrawing', function() {
     updateTextBoxPositions();
+    if (nodeResizeHandleNodeId && !nodeResizeState) {
+      positionNodeResizeHandle(nodeResizeHandleNodeId);
+    }
   });
 
   emptyState.style.display = 'block';
@@ -1852,6 +1863,7 @@ function hideRelationPopoverDelayed() {
 // ─── Text boxes & context menu ────────────────────────────────
 let contextMenuClickX = 0, contextMenuClickY = 0;
 let textBoxDragState = null;
+let nodeResizeState = null;
 
 function showContextMenu(e, textBoxId) {
   contextMenuClickX = e.clientX;
@@ -2064,6 +2076,71 @@ function onTextBoxDragEnd() {
   document.removeEventListener('mousemove', onTextBoxDragMove);
   document.removeEventListener('mouseup', onTextBoxDragEnd);
   textBoxDragState = null;
+}
+
+// ─── Node resize handle ────────────────────────────────────────
+var nodeResizeHandle = document.getElementById('nodeResizeHandle');
+var nodeResizeHandleNodeId = null;
+var nodeResizeHandleHideTimer = null;
+
+function showNodeResizeHandle(nodeId) {
+  clearTimeout(nodeResizeHandleHideTimer);
+  if (nodeResizeState) return;
+  nodeResizeHandleNodeId = nodeId;
+  positionNodeResizeHandle(nodeId);
+  nodeResizeHandle.style.display = 'block';
+}
+
+function positionNodeResizeHandle(nodeId) {
+  if (!state.network) return;
+  var bb = state.network.getBoundingBox(nodeId);
+  if (!bb) return;
+  var dom = state.network.canvasToDOM({ x: bb.right, y: bb.bottom });
+  var containerRect = graphEl.parentElement.getBoundingClientRect();
+  nodeResizeHandle.style.left = (dom.x - 8) + 'px';
+  nodeResizeHandle.style.top = (dom.y - 8) + 'px';
+}
+
+function hideNodeResizeHandle() {
+  clearTimeout(nodeResizeHandleHideTimer);
+  nodeResizeHandleHideTimer = setTimeout(function() {
+    if (nodeResizeState) return;
+    nodeResizeHandle.style.display = 'none';
+    nodeResizeHandleNodeId = null;
+  }, 300);
+}
+
+function cancelHideNodeResizeHandle() {
+  clearTimeout(nodeResizeHandleHideTimer);
+}
+
+function startNodeResize(e, nodeId) {
+  e.preventDefault(); e.stopPropagation();
+  if (!state.network) return;
+  var bb = state.network.getBoundingBox(nodeId);
+  if (!bb) return;
+  var startW = bb.right - bb.left;
+  var startH = bb.bottom - bb.top;
+  nodeResizeState = { nodeId: nodeId, startX: e.clientX, startY: e.clientY, startW: startW, startH: startH };
+  document.addEventListener('mousemove', onNodeResizeMove);
+  document.addEventListener('mouseup', onNodeResizeEnd);
+}
+
+function onNodeResizeMove(e) {
+  if (!nodeResizeState || !state.network) return;
+  var s = nodeResizeState;
+  var scale = state.network.getScale();
+  var newW = Math.max(60, s.startW + (e.clientX - s.startX) / scale);
+  var newH = Math.max(30, s.startH + (e.clientY - s.startY) / scale);
+  state.nodes.update({ id: s.nodeId, widthConstraint: newW, heightConstraint: { minimum: newH } });
+  positionNodeResizeHandle(s.nodeId);
+}
+
+function onNodeResizeEnd() {
+  document.removeEventListener('mousemove', onNodeResizeMove);
+  document.removeEventListener('mouseup', onNodeResizeEnd);
+  nodeResizeState = null;
+  markTabDirty();
 }
 
 function defocusTextBox() {
@@ -2626,6 +2703,17 @@ popoverMode.addEventListener('change', function() {
     state.network.setOptions({ interaction: { hover: this.value === 'hover' } });
   }
   markTabDirty();
+});
+
+nodeResizeHandle.addEventListener('mousedown', function(e) {
+  if (!nodeResizeHandleNodeId) return;
+  startNodeResize(e, nodeResizeHandleNodeId);
+});
+nodeResizeHandle.addEventListener('mouseenter', function() {
+  cancelHideNodeResizeHandle();
+});
+nodeResizeHandle.addEventListener('mouseleave', function() {
+  if (!nodeResizeState) hideNodeResizeHandle();
 });
 
 graphEl.addEventListener('contextmenu', function(e) {
