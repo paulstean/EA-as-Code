@@ -196,7 +196,7 @@ header h1{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px
 #textBoxLayer{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:10}
 
 /* Text box */
-.text-box{position:absolute;pointer-events:auto;background:#d3d3d3;color:#000;border-radius:6px;padding:8px;font-size:11px;line-height:1.3;font-family:'Segoe UI',sans-serif;box-shadow:0 2px 8px rgba(0,0,0,0.3);min-width:30px;min-height:20px;user-select:none}
+.text-box{position:absolute;pointer-events:auto;background:#d3d3d3;color:#000;border-radius:6px;padding:8px;font-size:11px;line-height:1.3;font-family:'Segoe UI',sans-serif;box-shadow:0 2px 8px rgba(0,0,0,0.3);min-width:30px;min-height:20px;user-select:none;transform-origin:top left}
 .text-box-drag{position:absolute;top:-14px;left:0;width:14px;height:14px;cursor:grab;pointer-events:auto;z-index:2}
 .text-box-drag::before{content:'';position:absolute;top:6px;left:3px;width:8px;height:2px;background:#666}
 .text-box-drag::after{content:'';position:absolute;top:3px;left:6px;width:2px;height:8px;background:#666}
@@ -1979,9 +1979,9 @@ function positionTextBox(el, box) {
   const domPos = state.network.canvasToDOM({ x: box.x, y: box.y });
   el.style.left = domPos.x + 'px';
   el.style.top = domPos.y + 'px';
-  el.style.width = (box.width * scale) + 'px';
-  el.style.height = (box.height * scale) + 'px';
-  el.style.fontSize = (11 * scale) + 'px';
+  el.style.width = box.width + 'px';
+  el.style.height = box.height + 'px';
+  el.style.transform = 'scale(' + scale + ')';
 }
 
 function updateTextBoxPositions() {
@@ -1997,13 +1997,10 @@ function growTextBox(el, box) {
   if (!state.network) return;
   const content = el.querySelector('.text-box-content');
   if (!content) return;
-  const scale = state.network.getScale();
-  const domH = content.scrollHeight + 16;
-  const domW = content.scrollWidth + 16;
-  const canvasW = domW / scale;
-  const canvasH = domH / scale;
-  if (canvasW > box.width) box.width = canvasW;
-  if (canvasH > box.height) box.height = canvasH;
+  const w = content.scrollWidth + 16;
+  const h = content.scrollHeight + 16;
+  if (w > box.width) box.width = w;
+  if (h > box.height) box.height = h;
   positionTextBox(el, box);
 }
 
@@ -2108,7 +2105,7 @@ function onTextBoxDragMove(e) {
     var content = el.querySelector('.text-box-content');
     if (content) {
       positionTextBox(el, { width: newW, height: newH, x: box.x, y: box.y });
-      var minH = Math.max(20, (content.scrollHeight + 16) / scale);
+      var minH = Math.max(20, content.scrollHeight + 16);
       newH = Math.max(newH, minH);
     }
     box.width = newW;
