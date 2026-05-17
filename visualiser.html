@@ -1955,6 +1955,12 @@ function onTextBoxDragMove(e) {
     var scale = state.network.getScale();
     var newW = Math.max(30, s.startW + (e.clientX - s.startX) / scale);
     var newH = Math.max(20, s.startH + (e.clientY - s.startY) / scale);
+    var content = el.querySelector('.text-box-content');
+    if (content) {
+      positionTextBox(el, { width: newW, height: newH, x: box.x, y: box.y });
+      var minH = Math.max(20, (content.scrollHeight + 16) / scale);
+      newH = Math.max(newH, minH);
+    }
     box.width = newW;
     box.height = newH;
     positionTextBox(el, box);
