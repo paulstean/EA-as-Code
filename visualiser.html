@@ -2610,7 +2610,7 @@ searchInput.addEventListener('input', function() {
 // ─── Sidebar rendering ───────────────────────────────────────
 function renderSidebar() {
   let catHtml = '';
-  for (const cat of state.loadedCatalogNames) {
+  for (const cat of state.loadedCatalogNames.slice().sort()) {
     const color = CATALOG_COLORS[cat] || '#888';
     const entries = state.entries[cat] || [];
     const total = entries.length;
@@ -2701,7 +2701,7 @@ function renderSidebar() {
 
   // Legend
   let lgdHtml = '';
-  for (const cat of state.loadedCatalogNames) {
+  for (const cat of state.loadedCatalogNames.slice().sort()) {
     const color = CATALOG_COLORS[cat] || '#888';
     const count = state.entries[cat]?.length || 0;
     lgdHtml += `<div class="lgd-item"><span class="lgd-swatch" style="background:${color}"></span><span class="lgd-name">${toTitle(cat)}</span><span class="lgd-count">${count}</span></div>`;
