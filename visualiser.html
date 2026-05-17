@@ -1955,22 +1955,6 @@ function onTextBoxDragMove(e) {
     var scale = state.network.getScale();
     var newW = Math.max(30, s.startW + (e.clientX - s.startX) / scale);
     var newH = Math.max(20, s.startH + (e.clientY - s.startY) / scale);
-    var content = el.querySelector('.text-box-content');
-    if (content) {
-      el.style.width = (newW * scale) + 'px';
-      el.style.height = 'auto';
-      var minDomH = content.scrollHeight;
-      var origW = el.style.width;
-      el.style.width = '0px';
-      content.style.whiteSpace = 'nowrap';
-      var minDomW = content.scrollWidth;
-      content.style.whiteSpace = '';
-      el.style.width = origW;
-      var minW = Math.max(30, (minDomW + 16) / scale);
-      var minH = Math.max(20, (minDomH + 16) / scale);
-      newW = Math.max(newW, minW);
-      newH = Math.max(newH, minH);
-    }
     box.width = newW;
     box.height = newH;
     positionTextBox(el, box);
