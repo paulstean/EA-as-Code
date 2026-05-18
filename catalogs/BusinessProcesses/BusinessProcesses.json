@@ -40,5 +40,11 @@
     "name": "Maintain Customer Accounts",
     "owningBusinessUnitId": "bu-006",
     "description": "Create and update customer accounts, manage premise details, and handle service requests."
+  },
+  {
+    "id": "bp-008",
+    "name": "Backstop",
+    "owningBusinessUnitId": "bu-001",
+    "description": "Deploy and operate the LV DERMS system for controlling inverter-connected distributed energy resources at customer sites, leveraging ADMS for voltage management, onboarding new inverter connections, commissioning inverters via authorised third-party installers, and curtailing export during minimum system load events."
   }
 ]

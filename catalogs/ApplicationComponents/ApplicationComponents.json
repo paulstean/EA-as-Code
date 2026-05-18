@@ -125,6 +125,11 @@
     "description": "Internal employee portal for self-service HR, procurement requests, and company news."
   },
   {
+    "id": "app-011",
+    "name": "LV DERMS",
+    "description": "Low Voltage Distributed Energy Resources Management System for controlling inverters at customer sites, onboarding new connections, commissioning devices via authorised installers, and curtailing export during minimum system load events. Integrates with ADMS for voltage management coordination."
+  },
+  {
     "id": "app-010",
     "name": "Azure Databricks",
     "technologyStandardId": "ts-001",
