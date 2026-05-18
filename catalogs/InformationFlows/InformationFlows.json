@@ -118,5 +118,13 @@
     "targetApplicationComponentId": "app-010",
     "dataEntityIds": ["de-025", "de-026"],
     "description": "External weather data ingested through Azure Integration Bus flows to Azure Databricks for weather-impact analysis."
+  },
+  {
+    "id": "flow-016",
+    "name": "Voltage Management Coordination between LV DERMS and ADMS",
+    "sourceApplicationComponentId": "app-011",
+    "targetApplicationComponentId": "app-004",
+    "dataEntityIds": ["de-027"],
+    "description": "LV DERMS coordinates voltage management with ADMS by sharing inverter telemetry and receiving voltage setpoint instructions for distribution network stability."
   }
 ]

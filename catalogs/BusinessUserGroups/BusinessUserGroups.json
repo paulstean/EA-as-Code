@@ -48,5 +48,10 @@
     "id": "bug-010",
     "name": "External AI Consultancy",
     "description": "Data science and AI team responsible for developing machine learning models and analytics on the Azure Databricks platform for the ERT project."
+  },
+  {
+    "id": "bug-011",
+    "name": "Authorised Electrical Installer",
+    "description": "Third-party authorised electrical installers who commission inverters at customer sites and configure export limits via the LV DERMS system."
   }
 ]
