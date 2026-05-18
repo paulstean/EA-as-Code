@@ -136,5 +136,18 @@
       { "standardId": "ss-016", "status": "NonCompliant", "notes": "There are no security gates in the CI/CD pipeline for Databricks notebooks and jobs. Code reviews do not include security review, and there is no static analysis or dependency scanning for Python and R libraries used in production jobs." }
     ],
     "description": "Azure Databricks analytics platform for data engineering, data science, and machine learning workloads supporting the ERT project."
+  },
+  {
+    "id": "app-011",
+    "name": "Minus FT",
+    "technologyStandardId": "ts-004",
+    "description": "AMI head-end system for collecting interval meter data from low-voltage meters, including 15-minute AMI reads and 5-minute power quality measurements (P, Q, I per phase)."
+  },
+  {
+    "id": "app-012",
+    "name": "LV Meter Analytics",
+    "technologyStandardId": "ts-001",
+    "infrastructureComponentId": "infra-004",
+    "description": "Databricks-based analytics platform for processing and analysing low-voltage meter data, including load profiling, anomaly detection, and power quality analytics."
   }
 ]
