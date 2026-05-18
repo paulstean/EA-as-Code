@@ -1,39 +1,36 @@
 # Changelog
 
-## v1.1.0 (2026-05-15)
+## v0.1 (2026-05-17)
+
+First public release. See [RELEASE_NOTES-v0.1.md](RELEASE_NOTES-v0.1.md) for full details.
 
 ### Added
-- `visualiser.html` — single-file interactive EA graph browser (no build step, open in Chrome/Edge)
-- `specification-visualiser.md` — full spec for the visualiser
+- 12 TOGAF-aligned architecture catalogs (162 entries) including SecurityStandards with 25 ISO 27001:2022 controls
+- `metamodel.json` with SecurityStandard entity type and SecurityStandardStatus enum
+- Security standard compliance assessments on ApplicationComponents (Compliant/NonCompliant/PartiallyCompliant with rationale)
+- ERT Project entities: External AI Consultancy, Azure Databricks, Incident/Weather data domains
+- Multi-tab views with per-tab state persistence, dirty flag, and save/load prompt
+- Text box annotations with text formatting (bold, font size S/M/L, alignment)
+- Node field selection checkboxes in hover/right-click popover
+- Node resize handle (drag bottom-right corner), persisted across refresh
+- Zoom controls: +/- buttons with live zoom percentage display, zoom-to-fit button
+- Resizable AI chat pane (drag left edge)
+- Remove node from graph via popover button
+- AI chat approval flow for adding/removing catalog entries on the diagram
+- Chat log export (Markdown and HTML)
+- Skills directory with agent skill files and validation
+- Governance rules in `rules/*.md` with CI auto-evaluation
 
-### Visualiser Features
-- Force-directed graph powered by vis-network with box-shaped nodes and arrow edges
-- File System Access API (`showDirectoryPicker`) to load catalogs at runtime from local clone
-- Catalog multi-select checkboxes with Select All / Deselect All
-- Search/filter by name and description with dimmed non-matching nodes
-- Node detail panel with resolved reference links (clickable cross-catalog navigation)
-- Hover highlights connected nodes, dims the rest
-- Dark/light theme toggle with localStorage persistence
-- Empty canvas start — user builds the graph incrementally
-
-## v1.0.0 (2026-05-15)
-
-Initial release of EA-as-Code.
-
-### Added
-- 11 TOGAF-aligned architecture catalogs with synthetic seed data for an Electrical Distribution Utility
-- `metamodel.json` defining entity types, relationships with cardinality, and enum constraints
-- Per-catalog `-Meta.json` schema files with field definitions and relationship mappings
-- GitHub Actions CI pipeline (`pr-review.yml`) with 4 stages: structural validation, diff analysis, Copilot rule assessment, PR comment
-- Sample governance skill file in `rules/`
-- Specification document (`specification.md`) detailing the full system design
-
-### Catalogs
-- BusinessUnits (8 entries), BusinessProcesses (7), BusinessActivities (18)
-- DataDomains (7), DataEntities (22)
-- ApplicationComponents (9), InformationFlows (12), InfrastructureComponents (8)
-- BusinessUserGroups (9), Permissions (15), TechnologyStandards (10)
+### Fixed
+- vis-network console errors (invalid `zIndex`, `backgroundColor`, `maxVelocity` placement)
+- Text box scaling with zoom (now uses CSS transform for stable sizing across zoom levels)
+- Text box resize no longer forces full paragraph width
+- Node field selection now per-node, not per-catalog
+- Node position retention across refresh
+- Default to light theme for first-time visitors
+- Catalog names formatted with spaces between words (CamelCase → natural)
 
 ### Infrastructure
-- Repository structure with catalog-per-directory layout
-- All cross-references validated — zero orphaned IDs
+- GitHub Actions CI pipeline validating JSON, metamodel, cardinality, enums, skills
+- 883 validation tests, zero errors
+- All changes verified before commit

@@ -142,5 +142,44 @@
     "businessUserGroupId": "bug-004",
     "supportedByApplicationComponentIds": ["app-005"],
     "description": "Update customer contact information, billing preferences, or premise details."
+  },
+  {
+    "id": "ba-019",
+    "name": "Deploy LV DERMS",
+    "businessProcessId": "bp-008",
+    "businessUserGroupId": "bug-008",
+    "description": "IT Administrator deploys the LV DERMS system onto the enterprise infrastructure for controlling inverter-connected DERs."
+  },
+  {
+    "id": "ba-020",
+    "name": "Manage Voltage via ADMS",
+    "businessProcessId": "bp-008",
+    "businessUserGroupId": "bug-003",
+    "supportedByApplicationComponentIds": ["app-004", "app-011"],
+    "description": "Network Controller manages distribution network voltage by coordinating between ADMS and LV DERMS, using inverter reactive power capability for voltage support."
+  },
+  {
+    "id": "ba-021",
+    "name": "Onboard Inverter Connection",
+    "businessProcessId": "bp-008",
+    "businessUserGroupId": "bug-004",
+    "supportedByApplicationComponentIds": ["app-011"],
+    "description": "Customer Service Representative processes new inverter connection requests, verifies site details and device specifications, and approves the connection in LV DERMS."
+  },
+  {
+    "id": "ba-022",
+    "name": "Commission Inverter",
+    "businessProcessId": "bp-008",
+    "businessUserGroupId": "bug-011",
+    "supportedByApplicationComponentIds": ["app-011"],
+    "description": "Authorised Electrical Installer commissions the inverter at the customer site, confirms installation parameters, and registers the device in LV DERMS."
+  },
+  {
+    "id": "ba-023",
+    "name": "Curtail Export During Minimum Load",
+    "businessProcessId": "bp-008",
+    "businessUserGroupId": "bug-003",
+    "supportedByApplicationComponentIds": ["app-011"],
+    "description": "Network Controller issues curtailment instructions to inverters via LV DERMS during minimum system load events to prevent reverse power flow and voltage rise."
   }
 ]

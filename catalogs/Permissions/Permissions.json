@@ -126,5 +126,29 @@
     "applicationComponentId": "app-010",
     "accessLevel": "Admin",
     "description": "External AI Consultancy have full administration access to Azure Databricks for data engineering, analytics, and machine learning workloads."
+  },
+  {
+    "id": "perm-017",
+    "name": "Network Controller LV DERMS Admin",
+    "businessUserGroupId": "bug-003",
+    "applicationComponentId": "app-011",
+    "accessLevel": "Admin",
+    "description": "Network Controllers have full control of LV DERMS for voltage management coordination, inverter monitoring, and issuing export curtailment instructions."
+  },
+  {
+    "id": "perm-018",
+    "name": "Installer LV DERMS Write",
+    "businessUserGroupId": "bug-011",
+    "applicationComponentId": "app-011",
+    "accessLevel": "Write",
+    "description": "Authorised Electrical Installers can register and commission inverters, update device parameters, and confirm installation records in LV DERMS."
+  },
+  {
+    "id": "perm-019",
+    "name": "Customer Service Rep LV DERMS Write",
+    "businessUserGroupId": "bug-004",
+    "applicationComponentId": "app-011",
+    "accessLevel": "Write",
+    "description": "Customer Service Representatives can create and manage inverter connection requests, review applications, and approve connections in LV DERMS."
   }
 ]

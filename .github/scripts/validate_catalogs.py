@@ -56,6 +56,7 @@ ID_PREFIXES = {
     "InformationFlows": "flow-",
     "InfrastructureComponents": "infra-",
     "Permissions": "perm-",
+    "SecurityStandards": "ss-",
     "TechnologyStandards": "ts-",
 }
 

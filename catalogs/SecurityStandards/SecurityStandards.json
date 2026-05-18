@@ -1,0 +1,177 @@
+[
+  {
+    "id": "ss-001",
+    "name": "Information Security Policy",
+    "category": "Organizational",
+    "status": "Implemented",
+    "description": "A policy framework defining information security objectives, responsibilities, and governance aligned with ISO 27001 and business strategy."
+  },
+  {
+    "id": "ss-002",
+    "name": "Information Security Roles and Responsibilities",
+    "category": "Organizational",
+    "status": "Implemented",
+    "description": "Assignment of security roles including CISO, security architects, and operational owners across all business units and IT functions."
+  },
+  {
+    "id": "ss-003",
+    "name": "Segregation of Duties",
+    "category": "Organizational",
+    "status": "Implemented",
+    "description": "Conflicting duties and areas of responsibility are segregated to reduce opportunities for unauthorized or unintentional modification of systems and data."
+  },
+  {
+    "id": "ss-004",
+    "name": "Supplier Security",
+    "category": "Organizational",
+    "status": "Implemented",
+    "description": "Security requirements are defined and enforced for all third-party suppliers, including cloud service providers and software vendors, via contractual agreements."
+  },
+  {
+    "id": "ss-005",
+    "name": "Asset Management",
+    "category": "Organizational",
+    "status": "Implemented",
+    "description": "All information assets are inventoried, classified, and assigned an owner with accountability for their protection throughout the asset lifecycle."
+  },
+  {
+    "id": "ss-006",
+    "name": "Risk Assessment and Treatment",
+    "category": "Organizational",
+    "status": "Implemented",
+    "description": "Regular risk assessments are conducted using a defined methodology. Identified risks are treated via mitigation, transfer, acceptance, or avoidance."
+  },
+  {
+    "id": "ss-007",
+    "name": "Business Continuity and Disaster Recovery",
+    "category": "Organizational",
+    "status": "Planned",
+    "description": "Business continuity plans and IT disaster recovery procedures are documented, tested, and reviewed to ensure timely恢复 of critical services."
+  },
+  {
+    "id": "ss-008",
+    "name": "Incident Management",
+    "category": "Organizational",
+    "status": "Implemented",
+    "description": "A structured incident response process covers detection, reporting, triage, containment, eradication, and post-incident review for all security events."
+  },
+  {
+    "id": "ss-009",
+    "name": "Compliance with Legal and Regulatory Requirements",
+    "category": "Organizational",
+    "status": "Implemented",
+    "description": "All information systems comply with applicable legal, regulatory, and contractual requirements including GDPR, SOX, and sector-specific regulations."
+  },
+  {
+    "id": "ss-010",
+    "name": "Information Security Awareness and Training",
+    "category": "People",
+    "status": "Implemented",
+    "description": "All employees and contractors receive mandatory security awareness training upon onboarding and annually thereafter, with role-specific advanced modules."
+  },
+  {
+    "id": "ss-011",
+    "name": "Access Control Policy",
+    "category": "Technological",
+    "status": "Implemented",
+    "description": "Access to systems and data is governed by role-based access control with least-privilege principles, reviewed quarterly and revoked promptly on role change or offboarding."
+  },
+  {
+    "id": "ss-012",
+    "name": "Multi-Factor Authentication",
+    "category": "Technological",
+    "status": "Planned",
+    "description": "Multi-factor authentication is required for all administrative access, remote access, and access to systems processing sensitive or regulated data."
+  },
+  {
+    "id": "ss-013",
+    "name": "Data Encryption at Rest",
+    "category": "Technological",
+    "status": "Implemented",
+    "description": "All sensitive data stored in databases, file systems, and cloud storage is encrypted using AES-256 or equivalent approved cryptographic algorithms."
+  },
+  {
+    "id": "ss-014",
+    "name": "Data Encryption in Transit",
+    "category": "Technological",
+    "status": "Implemented",
+    "description": "All data transmitted over untrusted networks is encrypted using TLS 1.2 or higher with strong cipher suites and valid certificates."
+  },
+  {
+    "id": "ss-015",
+    "name": "Vulnerability Management",
+    "category": "Technological",
+    "status": "Implemented",
+    "description": "Automated vulnerability scanning is performed weekly on all infrastructure and application components. Critical vulnerabilities are remediated within 48 hours."
+  },
+  {
+    "id": "ss-016",
+    "name": "Secure Software Development Lifecycle",
+    "category": "Technological",
+    "status": "Planned",
+    "description": "Security is integrated into every phase of the SDLC including threat modeling, static analysis, dependency scanning, and security acceptance testing."
+  },
+  {
+    "id": "ss-017",
+    "name": "Network Segmentation",
+    "category": "Technological",
+    "status": "Implemented",
+    "description": "Production, development, and corporate networks are segmented with firewalls and strict ACLs. OT networks are isolated from IT networks via unidirectional gateways."
+  },
+  {
+    "id": "ss-018",
+    "name": "Logging and Monitoring",
+    "category": "Technological",
+    "status": "Implemented",
+    "description": "Security-relevant events from systems, networks, and applications are collected in a SIEM platform with real-time alerting and a minimum retention period of 12 months."
+  },
+  {
+    "id": "ss-019",
+    "name": "Penetration Testing",
+    "category": "Technological",
+    "status": "Implemented",
+    "description": "External and internal penetration tests are conducted annually by accredited third parties, with all high-severity findings remediated before re-test."
+  },
+  {
+    "id": "ss-020",
+    "name": "Physical Security Perimeters",
+    "category": "Physical",
+    "status": "Implemented",
+    "description": "Data centres and critical infrastructure are protected by multi-zone physical access controls including biometric authentication, CCTV surveillance, and mantrap entry."
+  },
+  {
+    "id": "ss-021",
+    "name": "Clear Desk and Clear Screen",
+    "category": "Physical",
+    "status": "Implemented",
+    "description": "All personnel must lock workstations when unattended and clear desks of sensitive documents at end of day to prevent unauthorized access or information leakage."
+  },
+  {
+    "id": "ss-022",
+    "name": "Secure Disposal and Reuse of Equipment",
+    "category": "Physical",
+    "status": "Implemented",
+    "description": "All storage media and IT equipment are sanitized or physically destroyed before disposal or reuse, following NIST SP 800-88 guidelines."
+  },
+  {
+    "id": "ss-023",
+    "name": "Change Management",
+    "category": "Organizational",
+    "status": "Implemented",
+    "description": "All changes to production systems, applications, and infrastructure follow a documented change management process with approval, testing, and rollback planning."
+  },
+  {
+    "id": "ss-024",
+    "name": "Endpoint Protection",
+    "category": "Technological",
+    "status": "Implemented",
+    "description": "All endpoints are protected by approved anti-malware, host intrusion prevention, and are enrolled in a device management platform enforcing security baselines."
+  },
+  {
+    "id": "ss-025",
+    "name": "Identity and Access Management",
+    "category": "Technological",
+    "status": "Implemented",
+    "description": "Centralized identity management with automated provisioning and de-provisioning, SSO integration, and periodic access certification for all enterprise systems."
+  }
+]

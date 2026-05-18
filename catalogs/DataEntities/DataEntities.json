@@ -154,5 +154,23 @@
     "name": "Weather Forecast",
     "dataDomainId": "dd-009",
     "description": "Forecasted weather conditions including temperature ranges, severe weather warnings, and probability of precipitation."
+  },
+  {
+    "id": "de-027",
+    "name": "Inverter",
+    "dataDomainId": "dd-010",
+    "description": "Inverter device record including manufacturer, model, serial number, rated capacity, firmware version, and customer premise connection point."
+  },
+  {
+    "id": "de-028",
+    "name": "Connection Request",
+    "dataDomainId": "dd-010",
+    "description": "Application to connect a new inverter at a customer premise including site details, device specifications, and approval status."
+  },
+  {
+    "id": "de-029",
+    "name": "Curtailment Schedule",
+    "dataDomainId": "dd-010",
+    "description": "Scheduled export curtailment instructions for inverters during minimum system load events including curtailment duration, export limits, and affected device list."
   }
 ]

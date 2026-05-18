@@ -52,5 +52,11 @@
     "name": "Weather Data",
     "owningBusinessUnitId": "bu-001",
     "description": "Meteorological data including real-time weather observations, forecasts, and historical weather patterns affecting network operations."
+  },
+  {
+    "id": "dd-010",
+    "name": "Distributed Energy Resources",
+    "owningBusinessUnitId": "bu-001",
+    "description": "Data about inverter-connected distributed energy resources including device details, connection requests, commissioning records, and curtailment schedules."
   }
 ]

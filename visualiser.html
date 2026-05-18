@@ -151,6 +151,12 @@ header h1{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px
 #graphContainer{flex:1;position:relative;overflow:hidden;background:var(--graph-bg)}
 #graph{width:100%;height:100%}
 #emptyState{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:var(--text-muted);font-size:15px;text-align:center;pointer-events:none;display:none}
+#zoomFitBtn{position:absolute;bottom:16px;right:16px;z-index:20;width:36px;height:36px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:16px;color:var(--text-secondary);display:flex;align-items:center;justify-content:center;transition:all 0.12s;box-shadow:0 2px 8px var(--shadow)}
+#zoomFitBtn:hover{background:var(--hover-highlight);color:var(--text-primary);border-color:var(--accent)}
+#zoomControls{position:absolute;bottom:16px;right:60px;z-index:20;display:flex;align-items:center;gap:4px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:4px 8px;box-shadow:0 2px 8px var(--shadow)}
+#zoomControls .zoom-label{font-size:12px;color:var(--text-secondary);min-width:44px;text-align:center;user-select:none}
+#zoomControls button{width:28px;height:28px;background:transparent;border:1px solid var(--border);border-radius:5px;cursor:pointer;font-size:16px;color:var(--text-secondary);display:flex;align-items:center;justify-content:center;transition:all 0.12s;padding:0;line-height:1}
+#zoomControls button:hover{background:var(--hover-highlight);color:var(--text-primary);border-color:var(--accent)}
 
 /* Detail panel */
 #detailPanel{display:none;background:var(--panel-bg);border-top:1px solid var(--border);max-height:280px;overflow-y:auto;flex-shrink:0;transition:max-height 0.2s}
@@ -181,12 +187,20 @@ header h1{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px
 #relPopover .pop-item .pop-swatch{width:8px;height:8px;border-radius:2px;flex-shrink:0}
 #relPopover .pop-item .pop-name{color:var(--text-primary);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #relPopover .pop-item .pop-desc{color:var(--text-secondary);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#relPopover .pop-fields{padding:6px 12px 8px;border-bottom:1px solid var(--border)}
+#relPopover .pop-fields-label{font-size:11px;color:var(--text-muted);margin-bottom:4px}
+#relPopover .pop-field-item{display:flex;align-items:center;gap:4px;font-size:12px;padding:1px 0;cursor:pointer}
+#relPopover .pop-field-item:hover{color:var(--accent)}
+#relPopover .pop-field-item input[type="checkbox"]{accent-color:var(--accent);cursor:pointer;margin:0;flex-shrink:0}
+#relPopover .pop-actions{padding:8px 12px 4px;border-top:1px solid var(--border)}
+#relPopover .pop-remove{display:flex;align-items:center;gap:6px;padding:5px 10px;font-size:12px;color:var(--error);background:transparent;border:1px solid var(--border);border-radius:5px;cursor:pointer;width:100%;transition:all 0.12s}
+#relPopover .pop-remove:hover{background:rgba(231,76,60,0.1);border-color:var(--error)}
 
 /* Text box layer */
 #textBoxLayer{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:10}
 
 /* Text box */
-.text-box{position:absolute;pointer-events:auto;background:#d3d3d3;color:#000;border-radius:6px;padding:8px;font-size:11px;line-height:1.3;font-family:'Segoe UI',sans-serif;box-shadow:0 2px 8px rgba(0,0,0,0.3);min-width:30px;min-height:20px;user-select:none}
+.text-box{position:absolute;pointer-events:auto;background:#d3d3d3;color:#000;border-radius:6px;padding:8px;font-size:11px;line-height:1.3;font-family:'Segoe UI',sans-serif;box-shadow:0 2px 8px rgba(0,0,0,0.3);min-width:30px;min-height:20px;user-select:none;transform-origin:top left}
 .text-box-drag{position:absolute;top:-14px;left:0;width:14px;height:14px;cursor:grab;pointer-events:auto;z-index:2}
 .text-box-drag::before{content:'';position:absolute;top:6px;left:3px;width:8px;height:2px;background:#666}
 .text-box-drag::after{content:'';position:absolute;top:3px;left:6px;width:2px;height:8px;background:#666}
@@ -194,6 +208,9 @@ header h1{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px
 .text-box-content:empty::before{content:attr(data-placeholder);color:#888}
 .text-box .resize-handle{position:absolute;bottom:0;right:0;width:14px;height:14px;cursor:nwse-resize;pointer-events:auto}
 .text-box .resize-handle::after{content:'';position:absolute;bottom:2px;right:2px;width:8px;height:8px;border-right:2px solid #666;border-bottom:2px solid #666}
+
+#nodeResizeHandle{display:none;position:absolute;z-index:15;width:16px;height:16px;cursor:nwse-resize;pointer-events:auto}
+#nodeResizeHandle::after{content:'';position:absolute;bottom:3px;right:3px;width:10px;height:10px;border-right:2px solid #fff;border-bottom:2px solid #fff;opacity:0.8}
 
 /* Text format bar */
 #textFormatBar{display:none;position:fixed;z-index:20;background:#fff;border:1px solid #ccc;border-radius:6px;padding:4px 8px;gap:2px;box-shadow:0 2px 10px rgba(0,0,0,0.3);pointer-events:auto;font-family:'Segoe UI',sans-serif;align-items:center}
@@ -214,9 +231,13 @@ header h1{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px
 #contextMenu .ctx-item .ctx-icon{font-size:14px;flex-shrink:0}
 
 /* Chat Panel */
-#chatPanel{width:380px;min-width:380px;background:var(--bg-secondary);border-left:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;transition:width 0.25s,min-width 0.25s;overflow:hidden}
+#chatPanel{width:380px;min-width:200px;background:var(--bg-secondary);border-left:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;position:relative}
 #chatPanel.collapsed{width:34px;min-width:34px}
-#chatPanel.collapsed .chat-messages,#chatPanel.collapsed .chat-input-area,#chatPanel.collapsed .chat-status,#chatPanel.collapsed .chat-title{display:none}
+#chatPanel.collapsed .chat-messages,#chatPanel.collapsed .chat-input-area,#chatPanel.collapsed .chat-status,#chatPanel.collapsed .chat-title,#chatPanel.collapsed #modelSelect{display:none}
+#chatDragHandle{position:absolute;top:0;left:0;bottom:0;width:7px;cursor:col-resize;z-index:10;pointer-events:auto;flex-shrink:0}
+#chatDragHandle::after{content:'';position:absolute;top:0;left:2px;bottom:0;width:1px;background:var(--border)}
+#chatDragHandle:hover::after,#chatDragHandle.active::after{width:3px;background:var(--accent);left:2px}
+#chatPanel.collapsed #chatDragHandle{cursor:e-resize}
 .chat-header{display:flex;align-items:center;gap:6px;padding:8px 10px;border-bottom:1px solid var(--border);flex-shrink:0;min-height:36px}
 .chat-title{font-size:13px;font-weight:600;color:var(--text-primary);flex:1}
 .chat-status{font-size:10px;cursor:default}
@@ -252,6 +273,7 @@ header h1{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px
 .chat-msg.assistant p:first-child{margin-top:0}
 .chat-msg.assistant p:last-child{margin-bottom:0}
 .chat-msg.assistant hr{border:none;border-top:1px solid var(--border);margin:8px 0}
+.chat-msg.assistant .latex-math{font-size:1.3em}
 .chat-typing{display:flex;gap:4px;padding:8px 12px;align-self:flex-start;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;border-bottom-left-radius:2px}
 .chat-typing span{width:6px;height:6px;border-radius:50%;background:var(--text-muted);animation:typing 1.2s infinite ease-in-out}
 .chat-typing span:nth-child(2){animation-delay:0.2s}
@@ -372,15 +394,22 @@ header h1{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px
     <div id="graph"></div>
     <div id="emptyState">Open a repository and select catalogs to begin</div>
     <div id="textBoxLayer"></div>
+    <div id="zoomControls"><button id="zoomOutBtn" title="Zoom out">&minus;</button><span class="zoom-label" id="zoomLabel">100%</span><button id="zoomInBtn" title="Zoom in">+</button></div><button id="zoomFitBtn" title="Zoom to fit">&#8982;</button>
+    <div id="nodeResizeHandle"></div>
     <div id="textFormatBar" style="display:none">
       <button class="fmt-btn" id="fmtBold" title="Bold"><b>B</b></button>
       <span class="fmt-sep"></span>
       <button class="fmt-btn" id="fmtSmall" title="Small size">S</button>
       <button class="fmt-btn" id="fmtMedium" title="Medium size">M</button>
       <button class="fmt-btn" id="fmtLarge" title="Large size">L</button>
+      <span class="fmt-sep"></span>
+      <button class="fmt-btn" id="fmtAlignLeft" title="Align left">&#x2190;</button>
+      <button class="fmt-btn" id="fmtAlignCenter" title="Align center">&#x2194;</button>
+      <button class="fmt-btn" id="fmtAlignRight" title="Align right">&#x2192;</button>
     </div>
   </div>
   <aside id="chatPanel">
+    <div id="chatDragHandle"></div>
     <div class="chat-header">
       <span class="chat-title">AI Chat</span>
       <select id="modelSelect" title="Select Ollama model"></select>
@@ -390,7 +419,7 @@ header h1{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px
       <button class="chat-toggle" id="chatToggle" title="Toggle chat panel">&times;</button>
     </div>
     <div class="chat-messages" id="chatMessages">
-      <div class="chat-welcome">Ask about the EA repository...</div>
+      <div class="chat-welcome">Ask about the EA repository... try prompts such as "Please add all the data entities in the customer domain" or "What integrations exist between the customer domain and the network operations domain?"</div>
     </div>
     <div class="chat-input-area">
       <textarea id="chatInput" rows="1" placeholder="Ask a question..." title="Enter to send, Shift+Enter for newline"></textarea>
@@ -430,6 +459,7 @@ const CATALOG_COLORS = {
   InformationFlows: '#34495e',
   InfrastructureComponents: '#7f8c8d',
   Permissions: '#e84393',
+  SecurityStandards: '#00b894',
   TechnologyStandards: '#00cec9',
 };
 
@@ -506,6 +536,7 @@ const state = {
   tabs: [],
   activeTabId: null,
   tabLoadGuard: false,
+  nodeFields: {},  // entryId -> [fieldName, ...], defaults to ['name']
   textBoxes: [],
   pendingCmd: null,  // stores {action, catalog, targets} from cmd_request event
 };
@@ -598,8 +629,11 @@ function applyTheme(theme) {
   if (state.network) {
     state.network.setOptions({
       nodes: { font: { color: '#ffffff' } },
-      backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--graph-bg').trim(),
     });
+    const canvas = graphEl.querySelector('canvas');
+    if (canvas) {
+      canvas.style.background = getComputedStyle(document.documentElement).getPropertyValue('--graph-bg').trim();
+    }
   }
 }
 
@@ -629,6 +663,39 @@ function hexAlpha(hex, alpha) {
 
 function toTitle(str) {
   return str.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase()).trim();
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function buildNodeLabel(data) {
+  var cat = data.catalog, entry = data.entry;
+  var fields = state.nodeFields[data.entry.id];
+  if (!fields || fields.length === 0) fields = ['name'];
+  var label = '<b>' + toTitle(cat) + '</b>\n<b>' + escapeHtml(entry.name) + '</b>';
+  for (var i = 0; i < fields.length; i++) {
+    var f = fields[i];
+    if (f === 'name') continue;
+    var val = entry[f];
+    if (val == null) continue;
+    var display = Array.isArray(val) ? val.map(function(v) { return escapeHtml(v); }).join(', ') : escapeHtml(val);
+    label += '\n' + formatFieldName(f) + ': ' + display;
+  }
+  return label;
+}
+
+function getCatalogEntryFields(catalog) {
+  var entries = state.entries[catalog];
+  if (!entries || entries.length === 0) return [];
+  var keys = Object.keys(entries[0]);
+  return keys.filter(function(k) { return k !== 'name'; });
+}
+
+function refreshNodeLabel(nodeId) {
+  var data = state.entryMap[nodeId];
+  if (!data) return;
+  state.nodes.update({ id: nodeId, label: buildNodeLabel(data) });
 }
 
 // ─── Tab Management ──────────────────────────────────────────
@@ -668,6 +735,16 @@ function markTabSaved() {
 
 function getActiveViewState() {
   const positions = state.network ? state.network.getPositions() : {};
+  const nodes = state.nodes ? state.nodes.get() : [];
+  const nodeConstraints = {};
+  for (var i = 0; i < nodes.length; i++) {
+    var n = nodes[i];
+    if (n.widthConstraint !== undefined || n.heightConstraint !== undefined) {
+      nodeConstraints[n.id] = {};
+      if (n.widthConstraint !== undefined) nodeConstraints[n.id].widthConstraint = n.widthConstraint;
+      if (n.heightConstraint !== undefined) nodeConstraints[n.id].heightConstraint = n.heightConstraint;
+    }
+  }
   return {
     visibleEntries: [...state.visibleEntries],
     expandedCatalogs: [...state.expandedCatalogs],
@@ -685,7 +762,9 @@ function getActiveViewState() {
     theme: document.documentElement.getAttribute('data-theme') || 'dark',
     popoverMode: popoverMode.value,
     positions: positions,
-    textBoxes: state.textBoxes.map(function(tb) { return { id: tb.id, text: tb.text, x: tb.x, y: tb.y, width: tb.width, height: tb.height }; }),
+    nodeConstraints: nodeConstraints,
+    nodeFields: JSON.parse(JSON.stringify(state.nodeFields)),
+    textBoxes: state.textBoxes.map(function(tb) { return { id: tb.id, text: tb.text, x: tb.x, y: tb.y, width: tb.width, height: tb.height, align: tb.align }; }),
   };
 }
 
@@ -715,6 +794,8 @@ function getEmptyViewState() {
     theme: document.documentElement.getAttribute('data-theme') || 'dark',
     popoverMode: 'hover',
     positions: {},
+    nodeConstraints: {},
+    nodeFields: {},
     textBoxes: [],
   };
 }
@@ -730,6 +811,7 @@ function applyViewState(vs) {
     state.visibleEntries.clear();
     state.dimmedNodes.clear();
     closeDetail();
+    state.nodeFields = vs.nodeFields || {};
 
     const batch = [];
     for (const id of (vs.visibleEntries || [])) {
@@ -738,10 +820,12 @@ function applyViewState(vs) {
       const pos = vs.positions?.[id] || state.flowPositions[id];
       batch.push({
         id: id,
-        label: `${toTitle(data.catalog)}\n<b>${data.entry.name.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</b>`,
+        label: buildNodeLabel(data),
         group: data.catalog,
         x: pos?.x,
         y: pos?.y,
+        widthConstraint: vs.nodeConstraints?.[id]?.widthConstraint,
+        heightConstraint: vs.nodeConstraints?.[id]?.heightConstraint,
       });
       state.visibleEntries.add(id);
     }
@@ -789,8 +873,8 @@ function applyViewState(vs) {
             centralGravity: parseFloat(gravitySlider.value),
             damping: parseFloat(dampingSlider.value),
             springConstant: parseFloat(springConstSlider.value),
-            maxVelocity: parseInt(maxVelSlider.value),
-          }
+          },
+          maxVelocity: parseInt(maxVelSlider.value),
         },
         edges: { smooth: { type: 'curvedCW', roundness: parseFloat(curvatureSlider.value) } }
       });
@@ -809,7 +893,7 @@ function applyViewState(vs) {
       popoverMode.value = vs.popoverMode;
     }
 
-    state.textBoxes = vs.textBoxes ? vs.textBoxes.map(function(t) { return { id: t.id, text: t.text, x: t.x, y: t.y, width: t.width, height: t.height }; }) : [];
+    state.textBoxes = vs.textBoxes ? vs.textBoxes.map(function(t) { return { id: t.id, text: t.text, x: t.x, y: t.y, width: t.width, height: t.height, align: t.align || 'left' }; }) : [];
     renderAllTextBoxes();
     renderSidebar();
   } finally {
@@ -848,17 +932,14 @@ function closeTab(tabId) {
   if (idx === -1) return;
   if (state.tabs.length === 1) return;
 
-  if (!state.tabs[idx].saved) {
-    showConfirmModal(
-      'Unsaved Changes',
-      '"' + state.tabs[idx].name + '" has unsaved changes. Closing will discard them. Continue?',
-      function(proceed) {
-        if (proceed) doCloseTab(tabId);
-      }
-    );
-    return;
-  }
-  doCloseTab(tabId);
+  var tab = state.tabs[idx];
+  var msg = tab.saved
+    ? 'Are you sure you want to close "' + tab.name + '"?'
+    : '"' + tab.name + '" has unsaved changes. Closing will discard them. Continue?';
+
+  showConfirmModal('Close Tab', msg, function(proceed) {
+    if (proceed) doCloseTab(tabId);
+  });
 }
 
 function doCloseTab(tabId) {
@@ -1129,7 +1210,11 @@ async function saveActiveTabToJSON() {
     searchTerm: vs.searchTerm,
     physics: vs.physics,
     theme: vs.theme,
+    popoverMode: vs.popoverMode,
     positions: vs.positions,
+    textBoxes: vs.textBoxes,
+    nodeFields: vs.nodeFields,
+    nodeConstraints: vs.nodeConstraints,
   };
   try {
     var handle = await window.showSaveFilePicker({
@@ -1295,8 +1380,10 @@ function applyJSONViewState(obj) {
     theme: obj.theme || 'dark',
     popoverMode: obj.popoverMode || 'hover',
     positions: obj.positions || {},
-  };
-  applyViewState(vs);
+    textBoxes: obj.textBoxes || [],
+    nodeFields: obj.nodeFields || {},
+    nodeConstraints: obj.nodeConstraints || {},
+  };  applyViewState(vs);
 }
 
 // ─── Directory loading (File System Access API) ───────────────
@@ -1422,6 +1509,27 @@ function initGraph() {
     state.network.destroy();
     state.network = null;
   }
+
+  document.getElementById('zoomFitBtn').onclick = function() {
+    if (state.network && state.nodes.get().length > 0) state.network.fit({ animation: true });
+  };
+
+  function doZoom(factor) {
+    if (!state.network) return;
+    var s = state.network.getScale() * factor;
+    s = Math.max(0.05, Math.min(s, 5));
+    state.network.moveTo({ scale: s });
+  }
+
+  document.getElementById('zoomInBtn').onclick = function() { doZoom(1.4); };
+  document.getElementById('zoomOutBtn').onclick = function() { doZoom(1 / 1.4); };
+
+  function updateZoomLabel() {
+    if (!state.network) return;
+    var pct = Math.round(state.network.getScale() * 100);
+    document.getElementById('zoomLabel').textContent = pct + '%';
+  }
+
   state.nodes = new vis.DataSet([]);
   state.edges = new vis.DataSet([]);
   state.visibleEntries = new Set();
@@ -1430,6 +1538,8 @@ function initGraph() {
   state.selectedNodeId = null;
   state.textBoxes = [];
   textBoxLayer.innerHTML = '';
+  nodeResizeHandle.style.display = 'none';
+  nodeResizeHandleNodeId = null;
   detailPanel.classList.remove('open');
   detailPanel.style.display = 'none';
 
@@ -1462,12 +1572,10 @@ function initGraph() {
   const options = {
     groups,
     nodes: {
-      zIndex: 1,
       font: { color: '#ffffff', size: 13 },
       margin: { top: 8, right: 14, bottom: 8, left: 14 },
     },
     edges: {
-      zIndex: 0,
       arrows: { to: { enabled: true, scaleFactor: 0.8 } },
       width: 1.5,
       smooth: { type: 'curvedCW', roundness: curvature },
@@ -1497,6 +1605,10 @@ function initGraph() {
   };
 
   state.network = new vis.Network(container, { nodes: state.nodes, edges: state.edges }, options);
+  const initCanvas = graphEl.querySelector('canvas');
+  if (initCanvas) {
+    initCanvas.style.background = getComputedStyle(document.documentElement).getPropertyValue('--graph-bg').trim();
+  }
 
   state.network.on('hoverNode', function(params) {
     const connectedEdges = state.network.getConnectedEdges(params.node);
@@ -1527,11 +1639,13 @@ function initGraph() {
       const my = evt ? evt.clientY : (params.pointer.DOM.y + graphEl.getBoundingClientRect().top);
       showRelationPopover(params.node, mx, my);
     }
+    showNodeResizeHandle(params.node);
   });
 
   state.network.on('blurNode', function() {
     updateNodeColors();
     if (popoverMode.value === 'hover') hideRelationPopoverDelayed();
+    hideNodeResizeHandle();
   });
 
   state.network.on('dragEnd', function() {
@@ -1562,6 +1676,10 @@ function initGraph() {
 
   state.network.on('afterDrawing', function() {
     updateTextBoxPositions();
+    updateZoomLabel();
+    if (nodeResizeHandleNodeId && !nodeResizeState) {
+      positionNodeResizeHandle(nodeResizeHandleNodeId);
+    }
   });
 
   emptyState.style.display = 'block';
@@ -1575,7 +1693,7 @@ function addEntryToGraph(entryId) {
   const pos = state.savedPositions[entryId] || state.flowPositions[entryId];
   state.nodes.add({
     id: entry.id,
-    label: `${toTitle(catalog)}\n<b>${entry.name.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</b>`,
+    label: buildNodeLabel(data),
     group: catalog,
     x: pos?.x,
     y: pos?.y,
@@ -1604,7 +1722,7 @@ function addCatalogAllToGraph(catalog) {
     const pos = state.savedPositions[entry.id] || state.flowPositions[entry.id];
     batch.push({
       id: entry.id,
-      label: `${toTitle(catalog)}\n<b>${entry.name.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</b>`,
+      label: buildNodeLabel({ entry: entry, catalog: catalog }),
       group: catalog,
       x: pos?.x,
       y: pos?.y,
@@ -1700,12 +1818,32 @@ function getRelatedNodes(nodeId) {
 
 function showRelationPopover(nodeId, x, y) {
   clearTimeout(popoverHideTimer);
+  var data = state.entryMap[nodeId];
+  var catalog = data ? data.catalog : null;
+  var html = '';
+
+  // Field selection section
+  if (catalog) {
+    var catFields = getCatalogEntryFields(catalog);
+    var selected = state.nodeFields[nodeId];
+    if (!selected || selected.length === 0) selected = ['name'];
+    html += '<div class="pop-fields">';
+    html += '<div class="pop-fields-label">Node fields</div>';
+    html += '<label class="pop-field-item"><input type="checkbox" data-node-id="' + nodeId + '" data-field="name" checked disabled> <span style="color:var(--text-muted)">Name</span></label>';
+    for (var fi = 0; fi < catFields.length; fi++) {
+      var fn = catFields[fi];
+      var checked = selected.indexOf(fn) !== -1 ? ' checked' : '';
+      html += '<label class="pop-field-item"><input type="checkbox" data-node-id="' + nodeId + '" data-field="' + fn + '"' + checked + '> ' + formatFieldName(fn) + '</label>';
+    }
+    html += '</div>';
+  }
+
+  // Related nodes section
   const items = getRelatedNodes(nodeId);
-  let html;
   if (items.length === 0) {
-    html = '<div class="pop-empty">No hidden related nodes</div>';
+    html += '<div class="pop-empty">No hidden related nodes</div>';
   } else {
-    html = '<div class="pop-header">Hidden related nodes</div>';
+    html += '<div class="pop-header">Hidden related nodes</div>';
     for (const item of items) {
       const color = CATALOG_COLORS[item.catalog] || '#888';
       const arrow = item.dir === 'out' ? '&#8594;' : '&#8592;';
@@ -1716,6 +1854,10 @@ function showRelationPopover(nodeId, x, y) {
       html += '</div>';
     }
   }
+
+  // Remove node action
+  html += '<div class="pop-actions"><button class="pop-remove" data-action="remove" data-node-id="' + nodeId + '">&#10005; Remove node from graph</button></div>';
+
   relPopover.innerHTML = html;
   relPopover.style.display = 'block';
 
@@ -1730,6 +1872,36 @@ function showRelationPopover(nodeId, x, y) {
   if (py < 8) py = 8;
   relPopover.style.left = px + 'px';
   relPopover.style.top = py + 'px';
+
+  // Wire field checkbox changes
+  relPopover.querySelectorAll('.pop-field-item input[type="checkbox"]').forEach(function(cb) {
+    cb.addEventListener('change', function(e) {
+      e.stopPropagation();
+      var field = this.dataset.field;
+      if (!field) return;
+      var selected = state.nodeFields[nodeId];
+      if (!selected) selected = ['name'];
+      if (this.checked) {
+        if (selected.indexOf(field) === -1) selected.push(field);
+      } else {
+        selected = selected.filter(function(f) { return f !== field; });
+        if (selected.length === 0) selected = ['name'];
+      }
+      state.nodeFields[nodeId] = selected;
+      refreshNodeLabel(nodeId);
+      markTabDirty();
+    });
+  });
+
+  // Wire remove button
+  var removeBtn = relPopover.querySelector('.pop-remove');
+  if (removeBtn) {
+    removeBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      removeEntryFromGraph(nodeId);
+      relPopover.style.display = 'none';
+    });
+  }
 
   // Wire clicks on items
   relPopover.querySelectorAll('.pop-item').forEach(el => {
@@ -1756,6 +1928,7 @@ function hideRelationPopoverDelayed() {
 // ─── Text boxes & context menu ────────────────────────────────
 let contextMenuClickX = 0, contextMenuClickY = 0;
 let textBoxDragState = null;
+let nodeResizeState = null;
 
 function showContextMenu(e, textBoxId) {
   contextMenuClickX = e.clientX;
@@ -1809,7 +1982,7 @@ function createTextBox(screenX, screenY) {
   const id = 'textbox-' + Date.now();
   const graphRect = graphEl.parentElement.getBoundingClientRect();
   const canvasPos = state.network.DOMtoCanvas({ x: screenX - graphRect.left, y: screenY - graphRect.top });
-  const box = { id: id, text: '', x: canvasPos.x, y: canvasPos.y, width: 320, height: 80 };
+  const box = { id: id, text: '', x: canvasPos.x, y: canvasPos.y, width: 320, height: 80, align: 'left' };
   state.textBoxes.push(box);
   renderTextBox(box);
   markTabDirty();
@@ -1825,9 +1998,9 @@ function positionTextBox(el, box) {
   const domPos = state.network.canvasToDOM({ x: box.x, y: box.y });
   el.style.left = domPos.x + 'px';
   el.style.top = domPos.y + 'px';
-  el.style.width = (box.width * scale) + 'px';
-  el.style.height = (box.height * scale) + 'px';
-  el.style.fontSize = (11 * scale) + 'px';
+  el.style.width = box.width + 'px';
+  el.style.height = box.height + 'px';
+  el.style.transform = 'scale(' + scale + ')';
 }
 
 function updateTextBoxPositions() {
@@ -1843,13 +2016,10 @@ function growTextBox(el, box) {
   if (!state.network) return;
   const content = el.querySelector('.text-box-content');
   if (!content) return;
-  const scale = state.network.getScale();
-  const domH = content.scrollHeight + 16;
-  const domW = content.scrollWidth + 16;
-  const canvasW = domW / scale;
-  const canvasH = domH / scale;
-  if (canvasW > box.width) box.width = canvasW;
-  if (canvasH > box.height) box.height = canvasH;
+  const w = content.scrollWidth + 16;
+  const h = content.scrollHeight + 16;
+  if (w > box.width) box.width = w;
+  if (h > box.height) box.height = h;
   positionTextBox(el, box);
 }
 
@@ -1894,6 +2064,7 @@ function renderTextBox(box) {
   positionTextBox(el, box);
   var content = el.querySelector('.text-box-content');
   if (content.innerHTML !== box.text) content.innerHTML = box.text || '';
+  content.style.textAlign = box.align || 'left';
   growTextBox(el, box);
 }
 
@@ -1952,18 +2123,8 @@ function onTextBoxDragMove(e) {
     var newH = Math.max(20, s.startH + (e.clientY - s.startY) / scale);
     var content = el.querySelector('.text-box-content');
     if (content) {
-      el.style.width = (newW * scale) + 'px';
-      el.style.height = 'auto';
-      var minDomH = content.scrollHeight;
-      var origW = el.style.width;
-      el.style.width = '0px';
-      content.style.whiteSpace = 'nowrap';
-      var minDomW = content.scrollWidth;
-      content.style.whiteSpace = '';
-      el.style.width = origW;
-      var minW = Math.max(30, (minDomW + 16) / scale);
-      var minH = Math.max(20, (minDomH + 16) / scale);
-      newW = Math.max(newW, minW);
+      positionTextBox(el, { width: newW, height: newH, x: box.x, y: box.y });
+      var minH = Math.max(20, content.scrollHeight + 16);
       newH = Math.max(newH, minH);
     }
     box.width = newW;
@@ -1977,6 +2138,71 @@ function onTextBoxDragEnd() {
   document.removeEventListener('mousemove', onTextBoxDragMove);
   document.removeEventListener('mouseup', onTextBoxDragEnd);
   textBoxDragState = null;
+}
+
+// ─── Node resize handle ────────────────────────────────────────
+var nodeResizeHandle = document.getElementById('nodeResizeHandle');
+var nodeResizeHandleNodeId = null;
+var nodeResizeHandleHideTimer = null;
+
+function showNodeResizeHandle(nodeId) {
+  clearTimeout(nodeResizeHandleHideTimer);
+  if (nodeResizeState) return;
+  nodeResizeHandleNodeId = nodeId;
+  positionNodeResizeHandle(nodeId);
+  nodeResizeHandle.style.display = 'block';
+}
+
+function positionNodeResizeHandle(nodeId) {
+  if (!state.network) return;
+  var bb = state.network.getBoundingBox(nodeId);
+  if (!bb) return;
+  var dom = state.network.canvasToDOM({ x: bb.right, y: bb.bottom });
+  var containerRect = graphEl.parentElement.getBoundingClientRect();
+  nodeResizeHandle.style.left = (dom.x - 8) + 'px';
+  nodeResizeHandle.style.top = (dom.y - 8) + 'px';
+}
+
+function hideNodeResizeHandle() {
+  clearTimeout(nodeResizeHandleHideTimer);
+  nodeResizeHandleHideTimer = setTimeout(function() {
+    if (nodeResizeState) return;
+    nodeResizeHandle.style.display = 'none';
+    nodeResizeHandleNodeId = null;
+  }, 300);
+}
+
+function cancelHideNodeResizeHandle() {
+  clearTimeout(nodeResizeHandleHideTimer);
+}
+
+function startNodeResize(e, nodeId) {
+  e.preventDefault(); e.stopPropagation();
+  if (!state.network) return;
+  var bb = state.network.getBoundingBox(nodeId);
+  if (!bb) return;
+  var startW = bb.right - bb.left;
+  var startH = bb.bottom - bb.top;
+  nodeResizeState = { nodeId: nodeId, startX: e.clientX, startY: e.clientY, startW: startW, startH: startH };
+  document.addEventListener('mousemove', onNodeResizeMove);
+  document.addEventListener('mouseup', onNodeResizeEnd);
+}
+
+function onNodeResizeMove(e) {
+  if (!nodeResizeState || !state.network) return;
+  var s = nodeResizeState;
+  var scale = state.network.getScale();
+  var newW = Math.max(60, s.startW + (e.clientX - s.startX) / scale);
+  var newH = Math.max(30, s.startH + (e.clientY - s.startY) / scale);
+  state.nodes.update({ id: s.nodeId, widthConstraint: newW, heightConstraint: { minimum: newH } });
+  positionNodeResizeHandle(s.nodeId);
+}
+
+function onNodeResizeEnd() {
+  document.removeEventListener('mousemove', onNodeResizeMove);
+  document.removeEventListener('mouseup', onNodeResizeEnd);
+  nodeResizeState = null;
+  markTabDirty();
 }
 
 function defocusTextBox() {
@@ -2002,6 +2228,7 @@ function showFormatBar(boxId) {
   positionFormatBar(boxId);
   updateBoldState();
   updateFontSizeState();
+  updateAlignState(boxId);
 }
 
 function hideFormatBar() {
@@ -2061,6 +2288,26 @@ function updateFontSizeState() {
   } else {
     medBtn.classList.add('active');
   }
+}
+
+function updateAlignState(boxId) {
+  var box = state.textBoxes.find(function(b) { return b.id === boxId; });
+  if (!box) return;
+  var align = box.align || 'left';
+  document.getElementById('fmtAlignLeft').classList.toggle('active', align === 'left');
+  document.getElementById('fmtAlignCenter').classList.toggle('active', align === 'center');
+  document.getElementById('fmtAlignRight').classList.toggle('active', align === 'right');
+}
+
+function applyAlignment(align) {
+  if (!activeTextBoxId) return;
+  var box = state.textBoxes.find(function(b) { return b.id === activeTextBoxId; });
+  if (!box) return;
+  box.align = align;
+  var content = getActiveContent();
+  if (content) content.style.textAlign = align;
+  updateAlignState(activeTextBoxId);
+  markTabDirty();
 }
 
 function getActiveContent() {
@@ -2410,7 +2657,7 @@ searchInput.addEventListener('input', function() {
 // ─── Sidebar rendering ───────────────────────────────────────
 function renderSidebar() {
   let catHtml = '';
-  for (const cat of state.loadedCatalogNames) {
+  for (const cat of state.loadedCatalogNames.slice().sort()) {
     const color = CATALOG_COLORS[cat] || '#888';
     const entries = state.entries[cat] || [];
     const total = entries.length;
@@ -2422,7 +2669,7 @@ function renderSidebar() {
     catHtml += `<span class="cat-toggle ${isExpanded ? 'open' : ''}">&#x25B6;</span>`;
     catHtml += `<input type="checkbox" class="cat-master" ${selected === total && total > 0 ? 'checked' : ''}>`;
     catHtml += `<span class="cat-swatch" style="background:${color}"></span>`;
-    catHtml += `<span class="cat-name">${cat}</span>`;
+    catHtml += `<span class="cat-name">${toTitle(cat)}</span>`;
     catHtml += `<span class="cat-count">${selected}/${total}</span>`;
     catHtml += `</div>`;
     catHtml += `<div class="cat-entries ${isExpanded ? 'open' : ''}">`;
@@ -2501,10 +2748,10 @@ function renderSidebar() {
 
   // Legend
   let lgdHtml = '';
-  for (const cat of state.loadedCatalogNames) {
+  for (const cat of state.loadedCatalogNames.slice().sort()) {
     const color = CATALOG_COLORS[cat] || '#888';
     const count = state.entries[cat]?.length || 0;
-    lgdHtml += `<div class="lgd-item"><span class="lgd-swatch" style="background:${color}"></span><span class="lgd-name">${cat}</span><span class="lgd-count">${count}</span></div>`;
+    lgdHtml += `<div class="lgd-item"><span class="lgd-swatch" style="background:${color}"></span><span class="lgd-name">${toTitle(cat)}</span><span class="lgd-count">${count}</span></div>`;
   }
   legend.innerHTML = lgdHtml || '<div class="empty-catalogs">No catalogs loaded</div>';
 }
@@ -2518,6 +2765,17 @@ popoverMode.addEventListener('change', function() {
     state.network.setOptions({ interaction: { hover: this.value === 'hover' } });
   }
   markTabDirty();
+});
+
+nodeResizeHandle.addEventListener('mousedown', function(e) {
+  if (!nodeResizeHandleNodeId) return;
+  startNodeResize(e, nodeResizeHandleNodeId);
+});
+nodeResizeHandle.addEventListener('mouseenter', function() {
+  cancelHideNodeResizeHandle();
+});
+nodeResizeHandle.addEventListener('mouseleave', function() {
+  if (!nodeResizeState) hideNodeResizeHandle();
 });
 
 graphEl.addEventListener('contextmenu', function(e) {
@@ -2763,6 +3021,9 @@ document.getElementById('fmtBold').addEventListener('click', function() {
 document.getElementById('fmtSmall').addEventListener('click', function() { applyFontSize('small'); });
 document.getElementById('fmtMedium').addEventListener('click', function() { applyFontSize('medium'); });
 document.getElementById('fmtLarge').addEventListener('click', function() { applyFontSize('large'); });
+document.getElementById('fmtAlignLeft').addEventListener('click', function() { applyAlignment('left'); });
+document.getElementById('fmtAlignCenter').addEventListener('click', function() { applyAlignment('center'); });
+document.getElementById('fmtAlignRight').addEventListener('click', function() { applyAlignment('right'); });
 
 document.getElementById('textFormatBar').addEventListener('mousedown', function() { cancelHideFormatBar(); });
 
@@ -2786,7 +3047,7 @@ tryRestoreSession();
 
 // ─── AI Chat ────────────────────────────────────────────────
 const CHAT_SERVER = 'http://localhost:8765';
-let chatModel = 'qwen3.5:latest';
+let chatModel = 'gemma4:e4b';
 const chatMessages = [];
 let isStreaming = false;
 let pendingFollowUpText = null;
@@ -2818,9 +3079,9 @@ async function checkChatServer() {
           opt.textContent = m;
           modelSelect.appendChild(opt);
         }
-        if ([...modelSelect.options].some(o => o.value === 'qwen3.5:latest')) {
-          modelSelect.value = 'qwen3.5:latest';
-          chatModel = 'qwen3.5:latest';
+        if ([...modelSelect.options].some(o => o.value === 'gemma4:e4b')) {
+          modelSelect.value = 'gemma4:e4b';
+          chatModel = 'gemma4:e4b';
         } else if (chatModel && [...modelSelect.options].some(o => o.value === chatModel)) {
           modelSelect.value = chatModel;
         }
@@ -2836,8 +3097,72 @@ async function checkChatServer() {
   }
 }
 
+function renderLatexExpr(expr) {
+  var map = {
+    '\\rightarrow': '\u2192',
+    '\\leftarrow': '\u2190',
+    '\\Rightarrow': '\u21D2',
+    '\\Leftarrow': '\u21D0',
+    '\\mapsto': '\u21A6',
+    '\\to': '\u2192',
+    '\\gets': '\u2190',
+    '\\implies': '\u27F9',
+    '\\impliedby': '\u27F8',
+    '\\iff': '\u27F7',
+    '\\cdot': '\u22C5',
+    '\\cdots': '\u22EF',
+    '\\ldots': '\u2026',
+    '\\alpha': '\u03B1',
+    '\\beta': '\u03B2',
+    '\\gamma': '\u03B3',
+    '\\delta': '\u03B4',
+    '\\epsilon': '\u03B5',
+    '\\theta': '\u03B8',
+    '\\lambda': '\u03BB',
+    '\\mu': '\u03BC',
+    '\\sigma': '\u03C3',
+    '\\phi': '\u03C6',
+    '\\omega': '\u03C9',
+    '\\geq': '\u2265',
+    '\\leq': '\u2264',
+    '\\neq': '\u2260',
+    '\\approx': '\u2248',
+    '\\times': '\u00D7',
+    '\\div': '\u00F7',
+    '\\pm': '\u00B1',
+    '\\infty': '\u221E',
+    '\\partial': '\u2202',
+    '\\nabla': '\u2207',
+    '\\exists': '\u2203',
+    '\\forall': '\u2200',
+    '\\in': '\u2208',
+    '\\notin': '\u2209',
+    '\\subset': '\u2282',
+    '\\supset': '\u2283',
+    '\\subseteq': '\u2286',
+    '\\supseteq': '\u2287',
+    '\\cup': '\u222A',
+    '\\cap': '\u2229',
+    '\\emptyset': '\u2205',
+    '\\mathbb{N}': '\u2115',
+    '\\mathbb{Z}': '\u2124',
+    '\\mathbb{R}': '\u211D',
+    '\\mathbb{C}': '\u2102'
+  };
+  var result = expr;
+  for (var cmd in map) {
+    result = result.split(cmd).join(map[cmd]);
+  }
+  return '<span class="latex-math">' + result + '</span>';
+}
+
 function renderMarkdown(text) {
   var html = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  // Handle inline LaTeX math expressions $...$ (after HTML escaping so we can emit HTML)
+  html = html.replace(/\$([^$]+)\$/g, function(_, expr) {
+    return renderLatexExpr(expr);
+  });
 
   // Tables (before code blocks to avoid matching pipes inside code)
   html = html.replace(/(\|.+\|)(\n\|[-: |]+\|(\n\|.+\|)*)?/g, function(match) {
@@ -3048,6 +3373,45 @@ chatInput.addEventListener('input', function() {
 
 modelSelect.addEventListener('change', function() {
   if (!isStreaming) chatModel = this.value;
+});
+
+// ─── Chat panel resize drag ───────────────────────────────
+var chatDragHandle = document.getElementById('chatDragHandle');
+var chatDragActive = false;
+
+chatDragHandle.addEventListener('mousedown', function(e) {
+  e.preventDefault();
+  chatDragActive = true;
+  chatDragHandle.classList.add('active');
+
+  // If collapsed, expand first
+  if (chatPanel.classList.contains('collapsed')) {
+    chatPanel.classList.remove('collapsed');
+    chatToggle.textContent = '\u00D7';
+    chatPanel.style.width = '380px';
+  }
+
+  var startX = e.clientX;
+  var startW = chatPanel.offsetWidth;
+
+  function onMove(ev) {
+    if (!chatDragActive) return;
+    ev.preventDefault();
+    var w = startW - (ev.clientX - startX);
+    w = Math.max(200, Math.min(w, window.innerWidth - 580));
+    chatPanel.style.width = w + 'px';
+  }
+
+  function onUp() {
+    chatDragActive = false;
+    chatDragHandle.classList.remove('active');
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    if (state.network) setTimeout(function() { state.network.redraw(); }, 50);
+  }
+
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
 });
 
 chatToggle.addEventListener('click', function() {
