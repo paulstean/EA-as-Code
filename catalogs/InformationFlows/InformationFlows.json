@@ -126,5 +126,13 @@
     "targetApplicationComponentId": "app-004",
     "dataEntityIds": ["de-027"],
     "description": "LV DERMS coordinates voltage management with ADMS by sharing inverter telemetry and receiving voltage setpoint instructions for distribution network stability."
+  },
+  {
+    "id": "flow-017",
+    "name": "AMI Meter Historian",
+    "sourceApplicationComponentId": "app-012",
+    "targetApplicationComponentId": "app-007",
+    "dataEntityIds": ["de-018"],
+    "description": "AMI Meter Historian flows LV meter interval data from Minus FT to Azure Data Lake via Azure Integration Services. Carries 15-minute AMI reads and 5-minute power quality measurements (active/reactive power, current per phase)."
   }
 ]
